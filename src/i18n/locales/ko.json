@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "맞춤법 검사 활성화",
   "settings.app.form.enableSystemTray": "시스템 트레이에서 Ferdium 항상 표시하기",
   "settings.app.form.enableTodos": "Ferdium Todos 활성화",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "시작시 서비스를 잠자기 상태로 유지하기",
   "settings.app.form.hibernationStrategy": "하이버네이션 전략",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
