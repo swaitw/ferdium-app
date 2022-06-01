@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "スペルチェックを有効にする",
   "settings.app.form.enableSystemTray": "Ferdiumを常時システムトレイに表示する",
   "settings.app.form.enableTodos": "Ferdium ToDoを有効にする",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "起動時にサービスを休止状態にする",
   "settings.app.form.hibernationStrategy": "休止状態の方法",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
