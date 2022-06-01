@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "Kích hoạt tính năng kiểm tra chính tả",
   "settings.app.form.enableSystemTray": "Always show Ferdium in System Tray",
   "settings.app.form.enableTodos": "Cho phép Ferdium Todos",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "Giữ các dịch vụ ở chế độ ngủ đông khi khởi động",
   "settings.app.form.hibernationStrategy": "Chiến lược ngủ đông",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
