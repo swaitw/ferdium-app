@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "Ενεργοποίηση ορθογραφικού ελέγχου",
   "settings.app.form.enableSystemTray": "Να εμφανίζεται πάντα ο Ferdium στο πλαίσιο συστήματος",
   "settings.app.form.enableTodos": "Ενεργοποίηση Todos Ferdium",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "Κρατήστε υπηρεσίες σε χειμερία νάρκη κατά την εκκίνηση",
   "settings.app.form.hibernationStrategy": "Στρατηγική αδράνειας",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
