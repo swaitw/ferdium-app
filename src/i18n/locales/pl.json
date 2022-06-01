@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "Włącz sprawdzanie pisowni",
   "settings.app.form.enableSystemTray": "Zawsze pokazuj Ferdium w zasobniku systemowym",
   "settings.app.form.enableTodos": "Włącz Zadania Ferdium",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "Hibernacja usług po starcie systemu",
   "settings.app.form.hibernationStrategy": "Strategia hibernacji",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
