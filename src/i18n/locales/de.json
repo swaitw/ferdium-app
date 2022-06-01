@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "Rechtschreibprüfung aktivieren",
   "settings.app.form.enableSystemTray": "Ferdium immer im Infobereich anzeigen",
   "settings.app.form.enableTodos": "Ferdium Todos aktivieren",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "Behalte Dienste im Ruhezustand beim Start",
   "settings.app.form.hibernationStrategy": "\"Service Hibernation\"-Strategie",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
