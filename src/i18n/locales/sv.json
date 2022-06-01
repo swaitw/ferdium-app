@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "Aktivera stavningskontroll",
   "settings.app.form.enableSystemTray": "Visa alltid ikon i systemfältet",
   "settings.app.form.enableTodos": "Aktivera Ferdium Todos",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "Håll tjänster i viloläge vid start",
   "settings.app.form.hibernationStrategy": "Strategi för vila",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
