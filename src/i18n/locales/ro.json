@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "Activează verificarea ortografică",
   "settings.app.form.enableSystemTray": "Arată întotdeauna Ferdium în sertar",
   "settings.app.form.enableTodos": "Activează Ferdium Todos",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "Mențineți serviciile în hibernare la pornire",
   "settings.app.form.hibernationStrategy": "Strategia hibernării",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
