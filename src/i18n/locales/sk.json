@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "Zapnúť kontrolu pravopisu",
   "settings.app.form.enableSystemTray": "Zobrazovať Ferdium na paneli úloh",
   "settings.app.form.enableTodos": "Povoliť Ferdium Todos",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "Pri štarte ponechať služby uspané",
   "settings.app.form.hibernationStrategy": "Stratégia uspania",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
