@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "Aktiver stavekontroll",
   "settings.app.form.enableSystemTray": "Vis alltid Ferdium i systemlinje",
   "settings.app.form.enableTodos": "Aktiver Ferdium gjøremål",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "Hold tjenestene i dvalemodus ved oppstart",
   "settings.app.form.hibernationStrategy": "Dvalemodus-strategi",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
