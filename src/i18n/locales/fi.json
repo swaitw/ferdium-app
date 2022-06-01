@@ -212,7 +212,7 @@
   "settings.app.form.enableSpellchecking": "Ota oikoluku käyttöön",
   "settings.app.form.enableSystemTray": "Näytä Ferdium aina ilmoitusalueella",
   "settings.app.form.enableTodos": "Ota Ferdium Todos käyttöön",
-  "settings.app.form.grayscaleServicesDim": "Input grayscale dim level (%)",
+  "settings.app.form.grayscaleServicesDim": "Grayscale dim level",
   "settings.app.form.hibernateOnStartup": "Pidä palvelut horrostilassa käynnistettäessä",
   "settings.app.form.hibernationStrategy": "Horrostila-suunnitelma",
   "settings.app.form.hideNotificationsButton": "Hide Notifications & Sound button",
