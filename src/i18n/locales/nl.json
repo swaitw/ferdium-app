@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Toon geen bericht-inhoud in meldingen",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Herlaad Ferdium na systeem hervatten",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Houd Ferdium open op de achtergrond wanneer het venster gesloten wordt",
   "settings.app.form.scheduledDNDEnabled": "Activeer geplande niet-storen modus",
   "settings.app.form.scheduledDNDEnd": "Tot",
