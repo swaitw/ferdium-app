@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Toggle Dark Mode",
   "menu.view.toggleDevTools": "Aktif/Nonaktifkan alat pengembang",
   "menu.view.toggleFullScreen": "Aktif/Nonaktifkan Layar Penuh",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Aktif/Nonaktifkan layanan alat pengembang",
   "menu.view.toggleTodosDevTools": "Toggle Todos Developer Tools",
   "menu.view.zoomIn": "Perbesar",
