@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Nu afișa conținutul mesajului în notificări",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Reîncarcă Ferdium după reluarea sistemului",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Păstraţi Ferdium în fundal atunci când închideţi fereastra",
   "settings.app.form.scheduledDNDEnabled": "Activează programate Do-not-Disturb",
   "settings.app.form.scheduledDNDEnd": "La",
