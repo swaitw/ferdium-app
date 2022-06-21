@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Toggle Dark Mode",
   "menu.view.toggleDevTools": "Scoránaigh uirlis forbróra",
   "menu.view.toggleFullScreen": "Scoránaigh mód lánscáileáin",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Scoránaigh uirlis forbróra seirbhíse",
   "menu.view.toggleTodosDevTools": "Toggle Todos Developer Tools",
   "menu.view.zoomIn": "Zúmáil isteach",
