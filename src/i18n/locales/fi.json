@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Vaihda Tummaan tilaan",
   "menu.view.toggleDevTools": "Vaihda Kehittäjän työkaluun",
   "menu.view.toggleFullScreen": "Vaihda kokoruututilaan",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Vaihda Palvelun kehittäjän työkaluun",
   "menu.view.toggleTodosDevTools": "Vaihda Todon Kehittäjän työkalut",
   "menu.view.zoomIn": "Lähennä",
