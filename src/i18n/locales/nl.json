@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Donkere modus aan/uit",
   "menu.view.toggleDevTools": "Ontwikkelaarstools aan/uit",
   "menu.view.toggleFullScreen": "Volledig scherm aan/uit",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Ontwikkelaarstools voor service aan/uit",
   "menu.view.toggleTodosDevTools": "Ontwikkelaarstools voor Todos aan/uit",
   "menu.view.zoomIn": "Inzoomen",
