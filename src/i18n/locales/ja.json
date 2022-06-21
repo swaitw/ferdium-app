@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "通知にメッセージの内容を表示しない",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "システムの再開後にFerdiumを再読み込みする",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "ウインドウを閉じた際にFerdiumをバックグラウンドで実行させておく",
   "settings.app.form.scheduledDNDEnabled": "集中モードのスケジュールを有効にする",
   "settings.app.form.scheduledDNDEnd": "終了",
