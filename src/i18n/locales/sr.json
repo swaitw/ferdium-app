@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Toggle Dark Mode",
   "menu.view.toggleDevTools": "Промени алатке за развој",
   "menu.view.toggleFullScreen": "Преко целог екрана",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Toggle Service Developer Tools",
   "menu.view.toggleTodosDevTools": "Toggle Todos Developer Tools",
   "menu.view.zoomIn": "Увећај приказ",
