@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Εναλλαγή Σκοτεινής Λειτουργίας",
   "menu.view.toggleDevTools": "Άνοιγμα Εργαλειοθήκη Προγραμματιστών",
   "menu.view.toggleFullScreen": "Εναλλαγή Πλήρους Οθόνης",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Λειτουργεία Υπηρεσίασ Εργαλειοθήκης Προγραμματιστών",
   "menu.view.toggleTodosDevTools": "Εναλλαγή Εργαλείων Προγραμματιστή Εργασιών",
   "menu.view.zoomIn": "Μεγέθυνση",
