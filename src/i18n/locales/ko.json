@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "다크 모드 켜기/끄기",
   "menu.view.toggleDevTools": "개발자 모드 켜기/끄기",
   "menu.view.toggleFullScreen": "전체 화면 전환/복귀",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "서비스 개발자 모드 켜기/끄기",
   "menu.view.toggleTodosDevTools": "Todos 개발자 모드 켜기/끄기",
   "menu.view.zoomIn": "확대",
