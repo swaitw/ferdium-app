@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Canvia a Mode Fosc",
   "menu.view.toggleDevTools": "Activa serveis per a desenvolupadors",
   "menu.view.toggleFullScreen": "Activa la pantalla completa",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Habilita les eines de desenvolupador de serveis",
   "menu.view.toggleTodosDevTools": "Activa serveis per a desenvolupadors a Tasques",
   "menu.view.zoomIn": "Amplia",
