@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Toggle Dark Mode",
   "menu.view.toggleDevTools": "切換開發人員工具",
   "menu.view.toggleFullScreen": "切換全螢幕",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "切換開發人員服務工具",
   "menu.view.toggleTodosDevTools": "Toggle Todos Developer Tools",
   "menu.view.zoomIn": "放大",
