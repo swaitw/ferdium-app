@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Включить тёмную тему",
   "menu.view.toggleDevTools": "Показать инструменты разработчика",
   "menu.view.toggleFullScreen": "Полноэкранный режим",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Инструменты разработчика сервиса",
   "menu.view.toggleTodosDevTools": "Инструменты разработчика Todos",
   "menu.view.zoomIn": "Увеличить",
