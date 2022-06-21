@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Sötét mód ki-/bekapcsolása",
   "menu.view.toggleDevTools": "Fejlesztői eszközök ki/bekapcsolása",
   "menu.view.toggleFullScreen": "Teljes képernyős mód ki/bekapcsolása",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Szolgáltatás Fejlesztői Eszközök ki/bekapcsolása",
   "menu.view.toggleTodosDevTools": "Tennivalók Fejlesztői Eszközök kapcsolása",
   "menu.view.zoomIn": "Nagyítás",
