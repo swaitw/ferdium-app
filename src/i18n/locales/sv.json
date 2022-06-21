@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Visa inte meddelandeinnehåll i aviseringar",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Ladda om Ferdium efter datorn väckts från vila",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Kör Ferdium i bakgrunden när fönstret stängts",
   "settings.app.form.scheduledDNDEnabled": "Aktivera schemalagt Stör ej-läge",
   "settings.app.form.scheduledDNDEnd": "Till",
