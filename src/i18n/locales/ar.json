@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "عدم إظهار محتوى الرسالة في الإشعارات",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "إعادة تحميل فيردي بعد أعادة تشغيل النظام",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "إبقاء فردي في الخلفية عند إغلاق النافذة",
   "settings.app.form.scheduledDNDEnabled": "تمكين عدم الإزعاج المجدول",
   "settings.app.form.scheduledDNDEnd": "الى",
