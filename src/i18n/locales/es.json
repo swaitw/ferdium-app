@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Cambiar a modo oscuro",
   "menu.view.toggleDevTools": "Activar las Herramientas para Desarrolladores",
   "menu.view.toggleFullScreen": "Cambiar a Pantalla Completa",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Mostrar Herramientas de Servicios para Desarrolladores",
   "menu.view.toggleTodosDevTools": "Tareas pendientes: Herramientas para desarrolladores",
   "menu.view.zoomIn": "Ampliar",
