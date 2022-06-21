@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Chuyển sang Chế độ nền tối",
   "menu.view.toggleDevTools": "Chuyển sang Công cụ dành cho nhà phát triển",
   "menu.view.toggleFullScreen": "Chuyển sang Chế độ toàn màn hình",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Chuyển sang công cụ dành cho nhà phát triển dịch vụ",
   "menu.view.toggleTodosDevTools": "Chuyển sang Công cụ dành cho nhà phát triển Todos",
   "menu.view.zoomIn": "Phóng to",
