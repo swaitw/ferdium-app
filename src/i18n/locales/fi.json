@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Älä näytä viestin sisältöä ilmoituksissa",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Lataa Ferdium järjestelmän uudelleenkäynnistymisen jälkeen",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Pidä Ferdium taustalla kun ikkuna suljettaan",
   "settings.app.form.scheduledDNDEnabled": "Ota ajoitettu Älä häiritse-tila käyttöön",
   "settings.app.form.scheduledDNDEnd": "Vastaanottaja",
