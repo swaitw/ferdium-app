@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Να μην εμφανίζεται περιεχόμενο μηνύματος στις ειδοποιήσεις",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Επαναφόρτωση Ferdium μετά τη συνέχιση του συστήματος",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Κρατήστε το Ferdium στο παρασκήνιο κατά το κλείσιμο του παραθύρου",
   "settings.app.form.scheduledDNDEnabled": "Ενεργοποίηση προγραμματισμένης δομής όχι- ενοχλίας",
   "settings.app.form.scheduledDNDEnd": "Προς",
