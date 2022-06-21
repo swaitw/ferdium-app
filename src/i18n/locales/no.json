@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Skru av/på mørkt tema",
   "menu.view.toggleDevTools": "Aktiverer/deaktiverer utviklerverktøy",
   "menu.view.toggleFullScreen": "Gå inn/ut av fullskjerm",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Skru av/på tjenestutviklerverktøy",
   "menu.view.toggleTodosDevTools": "Aktiverer/deaktiverer gjøremål-utviklerverktøy",
   "menu.view.zoomIn": "Zoom inn",
