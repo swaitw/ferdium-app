@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Slå mørk tilstand til/fra",
   "menu.view.toggleDevTools": "Åbn/luk udviklerværktøjer",
   "menu.view.toggleFullScreen": "Skift Fuld Skærm",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Åbn/luk udviklerværktøjer for tjeneste",
   "menu.view.toggleTodosDevTools": "Åbn/luk udviklerværktøjer for Todos",
   "menu.view.zoomIn": "Zoom Ind",
