@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "לא להציג את תוכן ההודעות בהתראות",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "לרענן את Ferdium לאחר חזרת המערכת מהשהיה",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "להשאיר את Ferdium פעיל ברקע לאחר סגירת החלון",
   "settings.app.form.scheduledDNDEnabled": "הפעלת ‚לא להפריע’ לפי תזמון",
   "settings.app.form.scheduledDNDEnd": "התחלה",
