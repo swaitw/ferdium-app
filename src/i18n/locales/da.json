@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Vis ikke beskedindhold i notifikationer",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Genindlæs Ferdium efter systemet er vågnet",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Behold Ferdium i baggrunden når vinduet lukkes",
   "settings.app.form.scheduledDNDEnabled": "Aktiver planlagt Forstyr ikke",
   "settings.app.form.scheduledDNDEnd": "Til",
