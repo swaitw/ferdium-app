@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Comută modul întunecat",
   "menu.view.toggleDevTools": "Comutare instrumente de dezvoltare",
   "menu.view.toggleFullScreen": "Comutare ecran complet",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Comutare instrumente de dezvoltare servicii",
   "menu.view.toggleTodosDevTools": "Comutare instrumente de dezvoltare Todos",
   "menu.view.zoomIn": "Mărire în",
