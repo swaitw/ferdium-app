@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Zapnúť Tmavý Mód",
   "menu.view.toggleDevTools": "Prepnúť vývojárske nástroje",
   "menu.view.toggleFullScreen": "Prepnúť na celú obrazovku",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Prepnúť vývojárske nástroje služby",
   "menu.view.toggleTodosDevTools": "Prepnúť vývojárske nástroje",
   "menu.view.zoomIn": "Priblížiť",
