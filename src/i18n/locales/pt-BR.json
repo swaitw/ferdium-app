@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Ativar modo noturno",
   "menu.view.toggleDevTools": "Ativar/desativar ferramentas de programador",
   "menu.view.toggleFullScreen": "Alternar para Tela Cheia",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Ativar/desativar ferramentas de programador de serviço",
   "menu.view.toggleTodosDevTools": "Ativar/desativar Ferramentas de Programador para Tarefas",
   "menu.view.zoomIn": "Aumentar zoom",
