@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Gece Modunu kapat",
   "menu.view.toggleDevTools": "Geliştirici Araçlarına Geç",
   "menu.view.toggleFullScreen": "Tam Ekrana Geç",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Hizmet Geliştirici Araçlarını Değiştir",
   "menu.view.toggleTodosDevTools": "Yapılacaklar Listesi Geliştirici Araçlarını Aç",
   "menu.view.zoomIn": "Yakınlaştır",
