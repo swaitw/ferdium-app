@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "تفعيل الوضع المظلم",
   "menu.view.toggleDevTools": "فتح أدوات المطور",
   "menu.view.toggleFullScreen": "تفعيل وضع ملء الشاشة",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "فتح أدوات المطور للخدمة",
   "menu.view.toggleTodosDevTools": "ادخل إلى أدوات مطوري تودوس",
   "menu.view.zoomIn": "تكبير",
