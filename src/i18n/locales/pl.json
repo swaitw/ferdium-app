@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Tryb ciemny",
   "menu.view.toggleDevTools": "Pokaż narzędzia developerskie",
   "menu.view.toggleFullScreen": "Przełącz Tryb Pełnoekranowy",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Włącz narzędzia developerskie usługi",
   "menu.view.toggleTodosDevTools": "Przełącz narzędzia deweloperskie Listy zadań",
   "menu.view.zoomIn": "Powiększ",
