@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Nezobrazovat obsah zprávy v oznámeních",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Znovu načíst Ferdiumho po obnovení systému",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Ponechat Ferdiume v pozadí při zavírání okna",
   "settings.app.form.scheduledDNDEnabled": "Povolit naplánované \"Nerušit\"",
   "settings.app.form.scheduledDNDEnd": "Komu",
