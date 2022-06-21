@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Nachrichteninhalt nicht in Benachrichtigungen anzeigen",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Ferdium nach dem aufwachen aus dem Standby neu laden",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Ferdium im Hintergrund behalten, wenn das Fenster geschlossen wird",
   "settings.app.form.scheduledDNDEnabled": "Geplante \"Nicht-stören\"-Funktion aktivieren",
   "settings.app.form.scheduledDNDEnd": "Von",
