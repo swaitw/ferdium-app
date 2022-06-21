@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Перемкнути темний режим",
   "menu.view.toggleDevTools": "Перемкнути інструменти розробника",
   "menu.view.toggleFullScreen": "Перемкнути повноекранний режим",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Перемкнути інструменти розробника сервісу",
   "menu.view.toggleTodosDevTools": "Перемкнути інструменти розробника Завдань",
   "menu.view.zoomIn": "Збільшити",
