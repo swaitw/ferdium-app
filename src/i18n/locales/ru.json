@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Не показывать содержимое сообщений в уведомлениях",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Перезагрузить Ферди после возобновления системы",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Оставлять Ferdium в фоне при закрытии окна",
   "settings.app.form.scheduledDNDEnabled": "Включить запланированный режим \"не беспокоить\"",
   "settings.app.form.scheduledDNDEnd": "Кому",
