@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Không hiển thị nội dung tin nhắn trong thông báo",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Tải lại Ferdium sau khi hệ thống hoạt động trở lại",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Giữ Ferdium ở chế độ nền khi đóng cửa sổ",
   "settings.app.form.scheduledDNDEnabled": "Bật chế độ Không làm phiền đã lên lịch",
   "settings.app.form.scheduledDNDEnd": "Đến",
