@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "알림에 메세지 내용 보이지 않기",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Reload Ferdium after system resume",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "윈도우를 닫을 때 Ferdium 백그라운드에서 계속 실행하기",
   "settings.app.form.scheduledDNDEnabled": "방해 금지 모드 시간 설정",
   "settings.app.form.scheduledDNDEnd": "종료",
