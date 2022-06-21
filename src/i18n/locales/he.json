@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "הפעלת/השבתת מצב לילה",
   "menu.view.toggleDevTools": "הצגת/הסתרת כלי פיתוח",
   "menu.view.toggleFullScreen": "מסך מלא/חלקי",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "הצגת/הסתרת כלי פיתוח שירות",
   "menu.view.toggleTodosDevTools": "הצגת/הסתרת כלי פיתוח משימות",
   "menu.view.zoomIn": "התקרבות",
