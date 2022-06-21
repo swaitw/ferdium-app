@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Växla mörkt läge",
   "menu.view.toggleDevTools": "Växla utvecklarverktyg",
   "menu.view.toggleFullScreen": "Växla till/från helskärm",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Växla tjänsteverktyg för utvecklare",
   "menu.view.toggleTodosDevTools": "Växla Todos utvecklarverktyg",
   "menu.view.zoomIn": "Zooma in",
