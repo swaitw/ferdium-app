@@ -130,6 +130,7 @@
   "menu.view.toggleDarkMode": "Dunkles Design umschalten",
   "menu.view.toggleDevTools": "Entwicklertools anzeigen",
   "menu.view.toggleFullScreen": "Vollbildmodus umschalten",
+  "menu.view.toggleNavigationBar": "Toggle Navigation Bar",
   "menu.view.toggleServiceDevTools": "Entwicklertools für Dienst anzeigen",
   "menu.view.toggleTodosDevTools": "Todos Developer Tools umschalten",
   "menu.view.zoomIn": "Vergrößern",
