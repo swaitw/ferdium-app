@@ -233,6 +233,7 @@
   "settings.app.form.privateNotifications": "Не показувати вміст повідомлень в сповіщеннях",
   "settings.app.form.progressbarAccentColor": "Progressbar Accent color",
   "settings.app.form.reloadAfterResume": "Перезавантажити Ferdium після відновлення системи",
+  "settings.app.form.reloadAfterResumeTime": "Time to consider the system as idle/suspended (in minutes)",
   "settings.app.form.runInBackground": "Тримати Ferdium в фоні при закритті вікна",
   "settings.app.form.scheduledDNDEnabled": "Увімкнути запланований режим \"не турбувати\"",
   "settings.app.form.scheduledDNDEnd": "До",
