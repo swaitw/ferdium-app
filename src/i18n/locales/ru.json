@@ -115,6 +115,7 @@
   "menu.services": "Сервис",
   "menu.services.activatePreviousService": "Активировать предыдущий сервис",
   "menu.services.addNewService": "Добавить новый сервис...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Домой",
   "menu.services.setNextServiceActive": "Активировать следующий сервис",
   "menu.todos": "Задачи",
