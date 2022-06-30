@@ -115,6 +115,7 @@
   "menu.services": "服务",
   "menu.services.activatePreviousService": "激活以前的服务",
   "menu.services.addNewService": "Add New Service",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "主页",
   "menu.services.setNextServiceActive": "激活下一个服务",
   "menu.todos": "Todos",
