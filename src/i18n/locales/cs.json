@@ -115,6 +115,7 @@
   "menu.services": "Služby",
   "menu.services.activatePreviousService": "Aktivovat předchozí službu",
   "menu.services.addNewService": "Přidat novou službu...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Domů",
   "menu.services.setNextServiceActive": "Aktivovat další službu",
   "menu.todos": "Todos",
