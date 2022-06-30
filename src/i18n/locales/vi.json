@@ -115,6 +115,7 @@
   "menu.services": "Dịch vụ",
   "menu.services.activatePreviousService": "Kích hoạt dịch vụ trước đó",
   "menu.services.addNewService": "Add New Service...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Trang chủ",
   "menu.services.setNextServiceActive": "Kích hoạt dịch vụ tiếp theo",
   "menu.todos": "Danh sách cần làm",
