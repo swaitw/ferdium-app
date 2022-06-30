@@ -115,6 +115,7 @@
   "menu.services": "Hizmetler",
   "menu.services.activatePreviousService": "Bir önceki servisi aktive et",
   "menu.services.addNewService": "Yeni servis ekle...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Ana Sayfa",
   "menu.services.setNextServiceActive": "Bir sonraki servisi aktive et",
   "menu.todos": "Yapılacaklar",
