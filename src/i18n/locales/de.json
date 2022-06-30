@@ -115,6 +115,7 @@
   "menu.services": "Dienste",
   "menu.services.activatePreviousService": "Vorherigen Dienst aktivieren",
   "menu.services.addNewService": "Neuen Dienst hinzufügen...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Startseite",
   "menu.services.setNextServiceActive": "Nächsten Dienst aktivieren",
   "menu.todos": "Todos",
