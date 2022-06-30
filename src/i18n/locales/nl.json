@@ -115,6 +115,7 @@
   "menu.services": "Diensten",
   "menu.services.activatePreviousService": "Activeer vorige service",
   "menu.services.addNewService": "Nieuwe service toevoegen...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Startpagina",
   "menu.services.setNextServiceActive": "Activeer volgende service",
   "menu.todos": "Taken",
