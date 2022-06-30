@@ -115,6 +115,7 @@
   "menu.services": "الخدمات",
   "menu.services.activatePreviousService": "تفعيل الخدمة السابقة",
   "menu.services.addNewService": "إضافة خدمة جديدة...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "الرئيسية",
   "menu.services.setNextServiceActive": "تفعيل الخدمة التالية",
   "menu.todos": "المهام",
