@@ -115,6 +115,7 @@
   "menu.services": "Υπηρεσίες",
   "menu.services.activatePreviousService": "Ενεργοποίηση προηγούμενης υπηρεσίας",
   "menu.services.addNewService": "Προσθήκη Νέας Υπηρεσίας...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Αρχική",
   "menu.services.setNextServiceActive": "Ενεργοποίηση της επόμενης υπηρεσίας",
   "menu.todos": "Todos",
