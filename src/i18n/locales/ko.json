@@ -115,6 +115,7 @@
   "menu.services": "서비스",
   "menu.services.activatePreviousService": "이전 서비스 활성화",
   "menu.services.addNewService": "새로운 서비스 추가...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "홈",
   "menu.services.setNextServiceActive": "다음 서비스 활성화",
   "menu.todos": "Todos",
