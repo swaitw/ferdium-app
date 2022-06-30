@@ -115,6 +115,7 @@
   "menu.services": "Servicii",
   "menu.services.activatePreviousService": "Activează serviciul anterior",
   "menu.services.addNewService": "Adaugă Serviciu Nou...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Acasă",
   "menu.services.setNextServiceActive": "Activare serviciu următor",
   "menu.todos": "Todos",
