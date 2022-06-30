@@ -115,6 +115,7 @@
   "menu.services": "Szolgáltatások",
   "menu.services.activatePreviousService": "Előző szolgáltatás",
   "menu.services.addNewService": "Új szolgáltatás hozzáadása...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Kezdőlap",
   "menu.services.setNextServiceActive": "Következő szolgáltatás",
   "menu.todos": "Tennivalók",
