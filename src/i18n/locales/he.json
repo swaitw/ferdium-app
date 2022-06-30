@@ -115,6 +115,7 @@
   "menu.services": "שירותים",
   "menu.services.activatePreviousService": "הפעלת השירות הקודם",
   "menu.services.addNewService": "הוספת שירות חדש…",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "בית",
   "menu.services.setNextServiceActive": "הפעלת השירות הבא",
   "menu.todos": "משימות",
