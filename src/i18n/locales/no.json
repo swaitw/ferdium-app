@@ -115,6 +115,7 @@
   "menu.services": "Tjenester",
   "menu.services.activatePreviousService": "Aktiver forrige tjeneste",
   "menu.services.addNewService": "Legg til ny tjeneste...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Hjem",
   "menu.services.setNextServiceActive": "Aktiver neste tjeneste",
   "menu.todos": "Gjøremål",
