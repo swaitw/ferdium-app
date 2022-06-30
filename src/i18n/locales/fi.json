@@ -115,6 +115,7 @@
   "menu.services": "Palvelut",
   "menu.services.activatePreviousService": "Edellinen palvelu",
   "menu.services.addNewService": "Lisää uusi palvelu...",
+  "menu.services.copyToClipboard": "Copy to clipboard",
   "menu.services.goHome": "Etusivu",
   "menu.services.setNextServiceActive": "Seuraava palvelu",
   "menu.todos": "Todos-tehtävät",
