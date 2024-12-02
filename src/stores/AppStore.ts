@@ -1,47 +1,56 @@
-import { ipcRenderer } from 'electron';
+import { URL } from 'node:url';
 import {
   app,
-  screen,
-  powerMonitor,
-  nativeTheme,
   getCurrentWindow,
+  nativeTheme,
+  powerMonitor,
   process as remoteProcess,
+  screen,
 } from '@electron/remote';
+import AutoLaunch from 'auto-launch';
+import { ipcRenderer } from 'electron';
+import { readJsonSync, readdirSync, writeJsonSync } from 'fs-extra';
 import { action, computed, makeObservable, observable } from 'mobx';
 import moment from 'moment';
-import AutoLaunch from 'auto-launch';
 import ms from 'ms';
-import { URL } from 'url';
-import { readJsonSync } from 'fs-extra';
+import { v4 as uuidV4 } from 'uuid';
 
-import { Stores } from '../@types/stores.types';
-import { ApiInterface } from '../api';
-import { Actions } from '../actions/lib/actions';
-import TypedStore from './lib/TypedStore';
-import Request from './lib/Request';
+import type { Stores } from '../@types/stores.types';
+import type { Actions } from '../actions/lib/actions';
+import type { ApiInterface } from '../api';
 import { CHECK_INTERVAL, DEFAULT_APP_SETTINGS } from '../config';
-import { cleanseJSObject } from '../jsUtils';
-import { isMac, electronVersion, osRelease } from '../environment';
 import {
+  electronVersion,
+  isMac,
+  isWinPortable,
+  osRelease,
+} from '../environment';
+import {
+  ferdiumLocale,
   ferdiumVersion,
   userDataPath,
-  ferdiumLocale,
 } from '../environment-remote';
-import generatedTranslations from '../i18n/translations';
+import sleep from '../helpers/async-helpers';
 import { getLocale } from '../helpers/i18n-helpers';
-
 import {
   getServiceIdsFromPartitions,
   removeServicePartitionDirectory,
 } from '../helpers/service-helpers';
 import { openExternalUrl } from '../helpers/url-helpers';
-import sleep from '../helpers/async-helpers';
+import generatedTranslations from '../i18n/translations';
+import { cleanseJSObject } from '../jsUtils';
+import Request from './lib/Request';
+import TypedStore from './lib/TypedStore';
 
 const debug = require('../preload-safe-debug')('Ferdium:AppStore');
 
 const mainWindow = getCurrentWindow();
 
-const executablePath = isMac ? remoteProcess.execPath : process.execPath;
+const executablePath = isMac
+  ? remoteProcess.execPath
+  : isWinPortable
+    ? process.env.PORTABLE_EXECUTABLE_FILE
+    : process.execPath;
 const autoLauncher = new AutoLaunch({
   name: 'Ferdium',
   path: executablePath,
@@ -51,6 +60,28 @@ const CATALINA_NOTIFICATION_HACK_KEY =
   '_temp_askedForCatalinaNotificationPermissions';
 
 const locales = generatedTranslations();
+
+interface Download {
+  id: string;
+  serviceId: string;
+  filename: string;
+  url: string;
+  savePath?: string;
+  state?: 'progressing' | 'interrupted' | 'completed' | 'cancelled';
+  paused?: boolean;
+  canResume?: boolean;
+  progress?: number;
+  totalBytes?: number;
+  receivedBytes?: number;
+  startTime?: number;
+  endTime?: number;
+}
+
+interface SandboxServices {
+  id: string;
+  name: string;
+  services: string[];
+}
 
 export default class AppStore extends TypedStore {
   updateStatusTypes = {
@@ -63,6 +94,8 @@ export default class AppStore extends TypedStore {
 
   @observable healthCheckRequest = new Request(this.api.app, 'health');
 
+  @observable sandboxServices: SandboxServices[] = [];
+
   @observable getAppCacheSizeRequest = new Request(
     this.api.local,
     'getAppCacheSize',
@@ -70,7 +103,7 @@ export default class AppStore extends TypedStore {
 
   @observable clearAppCacheRequest = new Request(this.api.local, 'clearCache');
 
-  @observable autoLaunchOnStart = true;
+  @observable autoLaunchOnStart = DEFAULT_APP_SETTINGS.autoLaunchOnStart;
 
   @observable isOnline = navigator.onLine;
 
@@ -81,6 +114,8 @@ export default class AppStore extends TypedStore {
   @observable timeOfflineStart;
 
   @observable updateStatus = '';
+
+  @observable updateVersion = '';
 
   @observable locale = ferdiumLocale;
 
@@ -94,13 +129,16 @@ export default class AppStore extends TypedStore {
 
   @observable isFocused = true;
 
-  @observable lockingFeatureEnabled = false;
+  @observable isLockingFeatureEnabled =
+    DEFAULT_APP_SETTINGS.isLockingFeatureEnabled;
 
-  @observable launchInBackground = false;
+  @observable launchInBackground = DEFAULT_APP_SETTINGS.autoLaunchInBackground;
 
-  dictionaries = [];
+  fetchDataInterval: NodeJS.Timeout | null = null;
 
-  fetchDataInterval: null | NodeJS.Timer = null;
+  @observable downloads: Download[] = [];
+
+  @observable justFinishedDownloading: boolean = false;
 
   constructor(stores: Stores, api: ApiInterface, actions: Actions) {
     super(stores, api, actions);
@@ -124,6 +162,24 @@ export default class AppStore extends TypedStore {
       this._toggleCollapseMenu.bind(this),
     );
     this.actions.app.clearAllCache.listen(this._clearAllCache.bind(this));
+    this.actions.app.addDownload.listen(this._addDownload.bind(this));
+    this.actions.app.removeDownload.listen(this._removeDownload.bind(this));
+    this.actions.app.updateDownload.listen(this._updateDownload.bind(this));
+    this.actions.app.endedDownload.listen(this._endedDownload.bind(this));
+    this.actions.app.stopDownload.listen(this._stopDownload.bind(this));
+    this.actions.app.togglePauseDownload.listen(
+      this._togglePauseDownload.bind(this),
+    );
+
+    this.actions.app.addSandboxService.listen(
+      this._addSandboxService.bind(this),
+    );
+    this.actions.app.editSandboxService.listen(
+      this._editSandboxService.bind(this),
+    );
+    this.actions.app.deleteSandboxService.listen(
+      this._deleteSandboxService.bind(this),
+    );
 
     this.registerReactions([
       this._offlineCheck.bind(this),
@@ -181,6 +237,7 @@ export default class AppStore extends TypedStore {
     ipcRenderer.on('autoUpdate', (_, data) => {
       if (this.updateStatus !== this.updateStatusTypes.FAILED) {
         if (data.available) {
+          this.updateVersion = data.version;
           this.updateStatus = this.updateStatusTypes.AVAILABLE;
           if (isMac && this.stores.settings.app.automaticUpdates) {
             app.dock.bounce();
@@ -199,7 +256,7 @@ export default class AppStore extends TypedStore {
         }
 
         if (data.error) {
-          if (data.error.message && data.error.message.startsWith('404')) {
+          if (data.error.message?.startsWith('404')) {
             this.updateStatus = this.updateStatusTypes.NOT_AVAILABLE;
             console.warn(
               'Updater warning: there seems to be unpublished pre-release(s) available on GitHub',
@@ -221,6 +278,20 @@ export default class AppStore extends TypedStore {
 
       url = url.replace(/\/$/, '');
       url = url.replace(/\s?--(updated)/, '');
+
+      if (url.startsWith('service/')) {
+        const pattern = /service\/([^/]+)/;
+        // Use the exec method to extract the id from the URL
+        const match = pattern.exec(url);
+
+        if (match) {
+          const id = match[1]; // The id is captured in the first capture group
+          this.actions.service.setActive({
+            serviceId: id,
+          });
+        }
+        return;
+      }
 
       this.stores.router.push(url);
     });
@@ -275,16 +346,82 @@ export default class AppStore extends TypedStore {
     if (isMac && !localStorage.getItem(CATALINA_NOTIFICATION_HACK_KEY)) {
       debug('Triggering macOS Catalina notification permission trigger');
       // eslint-disable-next-line no-new
-      new window.Notification('Welcome to Ferdium 5', {
+      new window.Notification('Welcome to Ferdium 7', {
         body: 'Have a wonderful day & happy messaging.',
       });
 
       localStorage.setItem(CATALINA_NOTIFICATION_HACK_KEY, 'true');
     }
+
+    this._initializeSandboxes();
+  }
+
+  _initializeSandboxes() {
+    this._readSandboxes();
+
+    // Check partitions of the sandboxes that no longer exist
+    const dir = readdirSync(userDataPath('Partitions'));
+    dir
+      .filter(d => d.startsWith('sandbox-'))
+      .forEach(d => {
+        if (
+          !this.sandboxServices.some(s =>
+            s.id.includes(d.replace('sandbox-', '')),
+          )
+        ) {
+          try {
+            removeServicePartitionDirectory(d);
+          } catch (error) {
+            console.error(
+              'Error while checking service partition directory -',
+              error,
+            );
+          }
+        }
+      });
+
+    // Check if services in sandboxes still exists, if so, remove their partitions (NOT WORKING!)
+    // this.sandboxServices.forEach(sandbox => {
+    //   sandbox.services.forEach(serviceId => {
+    //     try {
+    //       removeServicePartitionDirectory(serviceId, true);
+    //     } catch (error) {
+    //       console.error(
+    //         'Error while checking service partition directory -',
+    //         error,
+    //       );
+    //     }
+    //   });
+    // });
+  }
+
+  _readSandboxes() {
+    this.sandboxServices = readJsonSync(
+      userDataPath('config', 'sandboxes.json'),
+    );
+  }
+
+  _writeSandboxes() {
+    // Check if services in sandboxes still exists, otherwise remove them
+    this.sandboxServices = this.sandboxServices.map(sandbox => ({
+      ...sandbox,
+      services: sandbox.services.filter(serviceId =>
+        this.stores.services.all.some(service => service.id === serviceId),
+      ),
+    }));
+
+    writeJsonSync(
+      userDataPath('config', 'sandboxes.json'),
+      this.sandboxServices,
+    );
   }
 
   @computed get cacheSize() {
     return this.getAppCacheSizeRequest.execute().result;
+  }
+
+  @computed get isDownloading() {
+    return this.downloads.some(download => download.state === 'progressing');
   }
 
   @computed get debugInfo() {
@@ -332,12 +469,17 @@ export default class AppStore extends TypedStore {
     };
   }
 
+  @action getSandbox({ serviceId }) {
+    return this.sandboxServices.find(s => s.services.includes(serviceId));
+  }
+
   // Actions
   @action _notify({ title, options, notificationId, serviceId = null }) {
     if (this.stores.settings.all.app.isAppMuted) return;
 
     // TODO: is there a simple way to use blobs for notifications without storing them on disk?
-    if (options.icon && options.icon.startsWith('blob:')) {
+    if (options.icon?.startsWith('blob:')) {
+      // eslint-disable-next-line no-param-reassign
       delete options.icon;
     }
 
@@ -480,6 +622,7 @@ export default class AppStore extends TypedStore {
         allOrphanedServiceIds.map(id => removeServicePartitionDirectory(id)),
       );
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.log('Error while deleting service partition directory -', error);
     }
     await Promise.all(
@@ -490,7 +633,7 @@ export default class AppStore extends TypedStore {
       ),
     );
 
-    await clearAppCache._promise;
+    await clearAppCache.promise;
 
     await sleep(ms('1s'));
 
@@ -499,28 +642,130 @@ export default class AppStore extends TypedStore {
     this.isClearingAllCache = false;
   }
 
+  @action _changeLocale(value: string) {
+    this.locale = value;
+  }
+
+  @action _addDownload(download: Download) {
+    this.downloads.unshift(download);
+    debug('Download added', this.downloads);
+  }
+
+  @action _removeDownload(id: string | null) {
+    debug(`Removed download ${id}`);
+    if (id === null) {
+      const indexesToRemove: number[] = [];
+      this.downloads.forEach(item => {
+        if (!item.state) return;
+        if (item.state === 'completed' || item.state === 'cancelled') {
+          indexesToRemove.push(this.downloads.indexOf(item));
+        }
+      });
+
+      if (indexesToRemove.length === 0) return;
+
+      this.downloads = this.downloads.filter(
+        (_, index) => !indexesToRemove.includes(index),
+      );
+
+      debug('Removed all completed downloads');
+      return;
+    }
+
+    const index = this.downloads.findIndex(item => item.id === id);
+    if (index !== -1) {
+      this.downloads.splice(index, 1);
+    }
+
+    debug(`Removed download ${id}`);
+  }
+
+  @action _updateDownload(download: Download) {
+    const index = this.downloads.findIndex(item => item.id === download.id);
+    if (index !== -1) {
+      this.downloads[index] = { ...this.downloads[index], ...download };
+    }
+
+    debug('Download updated', this.downloads[index]);
+  }
+
+  @action _endedDownload(download: Download) {
+    const index = this.downloads.findIndex(item => item.id === download.id);
+    if (index !== -1) {
+      this.downloads[index] = { ...this.downloads[index], ...download };
+    }
+
+    debug('Download ended', this.downloads[index]);
+
+    if (!this.isDownloading && download.state === 'completed') {
+      this.justFinishedDownloading = true;
+
+      setTimeout(() => {
+        this.justFinishedDownloading = false;
+      }, ms('2s'));
+    }
+  }
+
+  @action _stopDownload(downloadId: string | undefined) {
+    ipcRenderer.send('stop-download', {
+      downloadId,
+    });
+  }
+
+  @action _togglePauseDownload(downloadId: string | undefined) {
+    ipcRenderer.send('toggle-pause-download', {
+      downloadId,
+    });
+  }
+
+  @action _addSandboxService({ name = 'NEW SANDBOX' }) {
+    // Random ID
+    const id = uuidV4();
+
+    const sandboxService = { id, name, services: [] };
+
+    this.sandboxServices.push(sandboxService);
+
+    this._writeSandboxes();
+    return sandboxService;
+  }
+
+  @action _editSandboxService({ id, name, services }) {
+    const sandboxService = this.sandboxServices.find(s => s.id === id);
+    if (sandboxService) {
+      sandboxService.name = name ?? sandboxService.name;
+      sandboxService.services = services ?? sandboxService.services;
+      this._writeSandboxes();
+    }
+  }
+
+  @action _deleteSandboxService({ id }) {
+    this.sandboxServices = this.sandboxServices.filter(s => s.id !== id);
+    this._writeSandboxes();
+  }
+
+  _setLocale() {
+    if (this.stores.user?.isLoggedIn && this.stores.user?.data.locale) {
+      this._changeLocale(this.stores.user.data.locale);
+    } else if (!this.locale) {
+      this._changeLocale(this._getDefaultLocale());
+    }
+
+    moment.locale(this.locale);
+    debug(`Set locale to "${this.locale}"`);
+  }
+
   // Reactions
   _offlineCheck() {
-    if (!this.isOnline) {
-      this.timeOfflineStart = moment();
-    } else {
+    if (this.isOnline) {
       const deltaTime = moment().diff(this.timeOfflineStart);
 
       if (deltaTime > ms('30m')) {
         this.actions.service.reloadAll();
       }
+    } else {
+      this.timeOfflineStart = moment();
     }
-  }
-
-  _setLocale() {
-    if (this.stores.user?.isLoggedIn && this.stores.user?.data.locale) {
-      this.locale = this.stores.user.data.locale;
-    } else if (!this.locale) {
-      this.locale = this._getDefaultLocale();
-    }
-
-    moment.locale(this.locale);
-    debug(`Set locale to "${this.locale}"`);
   }
 
   _getDefaultLocale() {

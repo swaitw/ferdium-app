@@ -1,13 +1,18 @@
-import { Component, ReactElement } from 'react';
 import { inject, observer } from 'mobx-react';
-import { StoresProps, GlobalError } from '../../@types/ferdium-components.types';
+import { Component, type ReactElement } from 'react';
+import type {
+  GlobalError,
+  StoresProps,
+} from '../../@types/ferdium-components.types';
 import Login from '../../components/auth/Login';
 
-interface LoginScreenProps extends StoresProps {
+interface IProps extends StoresProps {
   error: GlobalError;
 }
 
-class LoginScreen extends Component<LoginScreenProps> {
+@inject('stores', 'actions')
+@observer
+class LoginScreen extends Component<IProps> {
   render(): ReactElement {
     const { actions, stores, error } = this.props;
     return (
@@ -26,4 +31,4 @@ class LoginScreen extends Component<LoginScreenProps> {
   }
 }
 
-export default inject('stores', 'actions')(observer(LoginScreen));
+export default LoginScreen;

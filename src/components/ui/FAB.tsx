@@ -1,30 +1,28 @@
-/**
- * Floating Action Button (FAB)
- */
-import { Component, ReactChildren } from 'react';
-import { observer } from 'mobx-react';
 import classnames from 'classnames';
+import { noop } from 'lodash';
+import { observer } from 'mobx-react';
+import { Component, type ReactElement, type ReactNode } from 'react';
 
-type Props = {
+interface IProps {
   className: string;
-  disabled: boolean;
-  onClick: () => void;
-  type: string;
-  children: ReactChildren;
-  htmlForm: string;
-};
+  disabled?: boolean;
+  onClick?: () => void;
+  type?: string;
+  children: ReactNode;
+  htmlForm?: string;
+}
 
-class Button extends Component<Props> {
-  static defaultProps = {
-    disabled: false,
-    onClick: () => {},
-    type: 'button',
-    htmlForm: '',
-  };
-
-  render() {
-    const { className, disabled, onClick, type, children, htmlForm } =
-      this.props;
+@observer
+class Button extends Component<IProps> {
+  render(): ReactElement {
+    const {
+      className,
+      disabled = false,
+      onClick = noop,
+      type = 'button',
+      children,
+      htmlForm = '',
+    } = this.props;
 
     const buttonProps = {
       className: classnames({
@@ -38,6 +36,7 @@ class Button extends Component<Props> {
     };
 
     return (
+      // eslint-disable-next-line @eslint-react/dom/no-missing-button-type
       <button {...buttonProps} type="button">
         {children}
       </button>
@@ -45,4 +44,4 @@ class Button extends Component<Props> {
   }
 }
 
-export default observer(Button);
+export default Button;

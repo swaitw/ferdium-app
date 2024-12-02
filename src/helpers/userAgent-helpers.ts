@@ -1,38 +1,39 @@
-import { cpus } from 'os';
+import { cpus } from 'node:os';
 import macosVersion from 'macos-version';
 import { chrome } from 'useragent-generator';
 import {
   chromeVersion,
+  is64Bit,
   isMac,
   isWindows,
-  is64Bit,
   osArch,
   osRelease,
 } from '../environment';
 
-function macOS() {
-  const version = macosVersion() || '';
+const macOS = () => {
+  const version = macosVersion() ?? '';
   let cpuName = cpus()[0].model.split(' ')[0];
-  if (cpuName && /\(/.test(cpuName)) {
+  if (cpuName.includes('(')) {
+    // eslint-disable-next-line prefer-destructuring
     cpuName = cpuName.split('(')[0];
   }
-  return `Macintosh; ${cpuName} Mac OS X ${version.replace(/\./g, '_')}`;
-}
+  return `Macintosh; ${cpuName} macOS ${version.replaceAll('.', '_')}`;
+};
 
-function windows() {
+const windows = () => {
   const version = osRelease;
   const [majorVersion, minorVersion] = version.split('.');
   const archString = is64Bit ? 'Win64' : 'Win32';
   return `Windows NT ${majorVersion}.${minorVersion}; ${archString}; ${osArch}`;
-}
+};
 
-function linux() {
+const linux = () => {
   const archString = is64Bit ? 'x86_64' : osArch;
   return `X11; Linux ${archString}`;
-}
+};
 
 export default function userAgent() {
-  let platformString = '';
+  let platformString;
 
   if (isMac) {
     platformString = macOS();

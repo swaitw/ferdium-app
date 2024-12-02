@@ -1,6 +1,6 @@
-import { Property } from 'csstype';
+import type { Property } from 'csstype';
 
-import { Theme } from '../../../themes';
+import type { Theme } from '../../../themes';
 
 const prefixStyles = (theme: Theme) => ({
   background: theme.inputPrefixBackground,
@@ -49,7 +49,6 @@ export default (theme: Theme) => ({
   },
   passwordScore: {
     background: theme.inputScorePasswordBackground,
-    border: theme.inputBorder,
     borderTopWidth: 0,
     borderBottomLeftRadius: theme.borderRadiusSmall,
     borderBottomRightRadius: theme.borderRadiusSmall,

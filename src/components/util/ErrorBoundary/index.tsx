@@ -1,6 +1,6 @@
-import { Component, ReactNode } from 'react';
-import withStyles, { WithStylesProps } from 'react-jss';
-import { defineMessages, injectIntl, IntlShape } from 'react-intl';
+import { Component, type ReactNode } from 'react';
+import { type IntlShape, defineMessages, injectIntl } from 'react-intl';
+import withStyles, { type WithStylesProps } from 'react-jss';
 
 import Button from '../../ui/button';
 import { H1 } from '../../ui/headline';
@@ -20,12 +20,21 @@ const messages = defineMessages({
 
 interface ErrorBoundaryProps extends WithStylesProps<typeof styles> {
   intl: IntlShape;
+  children?: React.ReactNode;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps> {
-  state = {
-    hasError: false,
-  };
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      hasError: false,
+    };
+  }
 
   componentDidCatch(): void {
     this.setState({ hasError: true });

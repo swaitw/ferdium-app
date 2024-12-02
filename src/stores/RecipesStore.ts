@@ -1,15 +1,15 @@
-import { action, computed, makeObservable, observable } from 'mobx';
 import { readJSONSync } from 'fs-extra';
+import { action, computed, makeObservable, observable } from 'mobx';
 import semver from 'semver';
 
-import Recipe from '../models/Recipe';
-import { Stores } from '../@types/stores.types';
-import { ApiInterface } from '../api';
-import { Actions } from '../actions/lib/actions';
+import type { Stores } from '../@types/stores.types';
+import type { Actions } from '../actions/lib/actions';
+import type { ApiInterface } from '../api';
+import { asarRecipesPath } from '../helpers/asar-helpers';
+import matchRoute from '../helpers/routing-helpers';
+import type Recipe from '../models/Recipe';
 import CachedRequest from './lib/CachedRequest';
 import Request from './lib/Request';
-import matchRoute from '../helpers/routing-helpers';
-import { asarRecipesPath } from '../helpers/asar-helpers';
 import TypedStore from './lib/TypedStore';
 
 const debug = require('../preload-safe-debug')('Ferdium:RecipeStore');
@@ -36,6 +36,7 @@ export default class RecipesStore extends TypedStore {
 
   async setup(): Promise<void> {
     // Initially load all recipes
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     this.all;
   }
 
@@ -74,8 +75,8 @@ export default class RecipesStore extends TypedStore {
 
   // Actions
   async _install({ recipeId }): Promise<Recipe> {
-    const recipe = await this.installRecipeRequest.execute(recipeId)._promise;
-    await this.allRecipesRequest.invalidate({ immediately: true })._promise;
+    const recipe = await this.installRecipeRequest.execute(recipeId).promise;
+    await this.allRecipesRequest.invalidate({ immediately: true }).promise;
 
     return recipe;
   }
@@ -128,7 +129,7 @@ export default class RecipesStore extends TypedStore {
       const update = updates[i];
 
       this.actions.recipe.install({ recipeId: update });
-      await this.installRecipeRequest._promise;
+      await this.installRecipeRequest.promise;
 
       this.installRecipeRequest.reset();
 
@@ -157,11 +158,11 @@ export default class RecipesStore extends TypedStore {
         router.push('/settings/recipes');
         debug(`Recipe ${recipeId} is not installed, trying to install it`);
 
-        const recipe = await this.installRecipeRequest.execute(recipeId)
-          ._promise;
+        const recipe =
+          await this.installRecipeRequest.execute(recipeId).promise;
         if (recipe) {
           await this.allRecipesRequest.invalidate({ immediately: true })
-            ._promise;
+            .promise;
           router.push(`/settings/services/add/${recipeId}`);
         } else {
           router.push('/settings/recipes');

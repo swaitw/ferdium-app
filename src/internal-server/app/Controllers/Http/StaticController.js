@@ -4,9 +4,7 @@
 
 class StaticController {
   // Enable all features
-  features({
-    response,
-  }) {
+  features({ response }) {
     return response.send({
       isServiceProxyEnabled: true,
       isWorkspaceEnabled: true,
@@ -14,15 +12,11 @@ class StaticController {
       isSettingsWSEnabled: false,
       isMagicBarEnabled: true,
       isTodosEnabled: true,
-      subscribeURL: 'https://ferdium.org',
-      hasInlineCheckout: true,
     });
   }
 
   // Show announcements
-  announcement({
-    response,
-  }) {
+  announcement({ response }) {
     return response.send({});
   }
 }

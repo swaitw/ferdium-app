@@ -1,10 +1,12 @@
 import { defineMessages, useIntl } from 'react-intl';
 
 import { mdiInformation } from '@mdi/js';
+import type { MouseEventHandler } from 'react';
 import InfoBar from './ui/InfoBar';
-import { GITHUB_FERDIUM_URL } from '../config';
-import { openExternalUrl } from '../helpers/url-helpers';
 import Icon from './ui/icon';
+
+import { isWinPortable } from '../environment';
+import { onAuthGoToReleaseNotes } from '../helpers/update-helpers';
 
 const messages = defineMessages({
   updateAvailable: {
@@ -21,32 +23,39 @@ const messages = defineMessages({
   },
 });
 
-type Props = {
-  onInstallUpdate: () => void;
+export interface IProps {
+  onInstallUpdate: MouseEventHandler<HTMLButtonElement>;
   onHide: () => void;
-};
+  updateVersionParsed: string;
+}
 
-const AppUpdateInfoBar = ({ onInstallUpdate, onHide }: Props) => {
+const AppUpdateInfoBar = (props: IProps) => {
+  const { onInstallUpdate, updateVersionParsed, onHide } = props;
   const intl = useIntl();
 
   return (
     <InfoBar
       type="primary"
       ctaLabel={intl.formatMessage(messages.buttonInstallUpdate)}
-      onClick={onInstallUpdate}
+      onClick={event => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        !isWinPortable && onInstallUpdate(event);
+      }}
       onHide={onHide}
     >
       <Icon icon={mdiInformation} />
-      {intl.formatMessage(messages.updateAvailable)}{' '}
+      <p style={{ padding: '0 0.5rem 0 1rem' }}>
+        {intl.formatMessage(messages.updateAvailable)}
+      </p>
       <button
         className="info-bar__inline-button"
         type="button"
-        onClick={() =>
-          openExternalUrl(
-            `${GITHUB_FERDIUM_URL}/ferdium-app/blob/develop/CHANGELOG.md`,
-            true,
-          )
-        }
+        onClick={() => {
+          window.location.href = onAuthGoToReleaseNotes(
+            window.location.href,
+            updateVersionParsed,
+          );
+        }}
       >
         <u>{intl.formatMessage(messages.changelog)}</u>
       </button>

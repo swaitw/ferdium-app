@@ -1,7 +1,8 @@
-import { systemPreferences, BrowserWindow, dialog } from 'electron';
-import { pathExistsSync, mkdirSync, writeFileSync } from 'fs-extra';
+import { dirname } from 'node:path';
+import { type BrowserWindow, dialog, systemPreferences } from 'electron';
+import { mkdirSync, pathExistsSync, writeFileSync } from 'fs-extra';
 import macosVersion from 'macos-version';
-import { dirname } from 'path';
+// eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
 // @ts-ignore
 import { askForScreenCaptureAccess } from 'node-mac-permissions';
 import { userDataPath } from '../environment-remote';
@@ -16,16 +17,16 @@ debug(
 
 const filePath = userDataPath('.has-app-requested-screen-capture-permissions');
 
-function hasPromptedForScreenCapturePermission(): string | boolean {
+const hasPromptedForScreenCapturePermission = (): string | boolean => {
   if (!isExplicitScreenCapturePermissionReqd) {
     return false;
   }
 
   debug('Checking if status file exists');
   return filePath && pathExistsSync(filePath);
-}
+};
 
-function hasScreenCapturePermissionAlreadyBeenGranted(): boolean {
+const hasScreenCapturePermissionAlreadyBeenGranted = (): boolean => {
   if (!isExplicitScreenCapturePermissionReqd) {
     return true;
   }
@@ -33,9 +34,9 @@ function hasScreenCapturePermissionAlreadyBeenGranted(): boolean {
   const screenCaptureStatus = systemPreferences.getMediaAccessStatus('screen');
   debug(`screen-capture permissions status: ${screenCaptureStatus}`);
   return screenCaptureStatus === 'granted';
-}
+};
 
-function createStatusFile(): void {
+const createStatusFile = (): void => {
   try {
     writeFileSync(filePath, '');
   } catch (error) {
@@ -46,7 +47,7 @@ function createStatusFile(): void {
 
     throw error;
   }
-}
+};
 
 export const askFormacOSPermissions = async (
   mainWindow: BrowserWindow,

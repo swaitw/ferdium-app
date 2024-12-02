@@ -24,7 +24,8 @@ html {
     color: $theme-text-color;
 
     &::after {
-      box-shadow: inset 0 0 5px 0 $dark-theme-black,
+      box-shadow:
+        inset 0 0 5px 0 $dark-theme-black,
         inset 0 0 2px 0 rgba(0, 0, 0, 0.4);
     }
 
@@ -95,6 +96,7 @@ body.win32:not(.isFullScreen) .app .app__content {
 
 .mode__split .app .app__service {
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-snap-type: x proximity;
 }
 
@@ -158,7 +160,8 @@ body.win32:not(.isFullScreen) .app .app__content {
     z-index: 1000;
     pointer-events: none;
     clip-path: inset(10px 0 10px 10px);
-    box-shadow: inset 0 0 10px 0 rgba(0, 0, 0, 0.12),
+    box-shadow:
+      inset 0 0 10px 0 rgba(0, 0, 0, 0.12),
       inset 0 0 2px 0 rgba(0, 0, 0, 0.24);
   }
 
@@ -199,6 +202,27 @@ body.win32:not(.isFullScreen) .app .app__content {
       display: none;
     }
   }
+}
+
+@keyframes isDownloadingFade {
+  50% {
+    color: $theme-brand-primary;
+  }
+}
+
+@keyframes isDownloadingDoneFade {
+  50% {
+    color: green;
+  }
+}
+
+.sidebar__button--downloading {
+  animation: isDownloadingFade 1s cubic-bezier(0.755, 0.05, 0.855, 0.06)
+    infinite;
+}
+
+.sidebar__button--done {
+  animation: isDownloadingDoneFade 0.2s linear infinite;
 }
 
 .grid .grid__row {

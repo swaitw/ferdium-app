@@ -1,7 +1,9 @@
-import { autorun, observable } from 'mobx';
 import { session } from '@electron/remote';
+import { action, autorun, observable } from 'mobx';
 
-const debug = require('../../preload-safe-debug')('Ferdium:feature:serviceProxy');
+const debug = require('../../preload-safe-debug')(
+  'Ferdium:feature:serviceProxy',
+);
 
 export const config = observable({
   isEnabled: true,
@@ -13,8 +15,12 @@ export default function init(stores: {
 }) {
   debug('Initializing `serviceProxy` feature');
 
+  const setIsEnabled = action((value: boolean) => {
+    config.isEnabled = value;
+  });
+
   autorun(() => {
-    config.isEnabled = true;
+    setIsEnabled(true);
 
     const services = stores.services.enabled;
     const proxySettings = stores.settings.proxy;
@@ -27,11 +33,7 @@ export default function init(stores: {
       if (config.isEnabled) {
         const serviceProxyConfig = proxySettings[service.id];
 
-        if (
-          serviceProxyConfig &&
-          serviceProxyConfig.isEnabled &&
-          serviceProxyConfig.host
-        ) {
+        if (serviceProxyConfig?.isEnabled && serviceProxyConfig.host) {
           const proxyHost = `${serviceProxyConfig.host}${
             serviceProxyConfig.port ? `:${serviceProxyConfig.port}` : ''
           }`;

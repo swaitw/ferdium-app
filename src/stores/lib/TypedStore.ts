@@ -1,7 +1,13 @@
-import { computed, IReactionPublic, makeObservable, observable } from 'mobx';
-import { Actions } from '../../actions/lib/actions';
-import { ApiInterface } from '../../api';
-import { Stores } from '../../@types/stores.types';
+import {
+  type IReactionPublic,
+  action,
+  computed,
+  makeObservable,
+  observable,
+} from 'mobx';
+import type { Stores } from '../../@types/stores.types';
+import type { Actions } from '../../actions/lib/actions';
+import type { ApiInterface } from '../../api';
 import Reaction from './Reaction';
 
 export default abstract class TypedStore {
@@ -14,6 +20,10 @@ export default abstract class TypedStore {
   api: ApiInterface;
 
   actions: Actions;
+
+  @action _setResetStatus() {
+    this._status = null;
+  }
 
   @computed get actionStatus() {
     return this._status || [];
@@ -31,7 +41,7 @@ export default abstract class TypedStore {
     this.actions = actions;
   }
 
-  registerReactions(reactions: { (r: IReactionPublic): void }[]): void {
+  registerReactions(reactions: ((r: IReactionPublic) => void)[]): void {
     for (const reaction of reactions) {
       this._reactions.push(new Reaction(reaction));
     }
@@ -49,6 +59,6 @@ export default abstract class TypedStore {
   }
 
   resetStatus(): void {
-    this._status = null;
+    this._setResetStatus();
   }
 }

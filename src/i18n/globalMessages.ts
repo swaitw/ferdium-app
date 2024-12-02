@@ -66,6 +66,10 @@ export default defineMessages({
     id: 'global.quitConfirmation',
     defaultMessage: 'Do you really want to quit Ferdium?',
   },
+  downloads: {
+    id: 'global.downloads',
+    defaultMessage: 'Downloads',
+  },
   settings: {
     id: 'global.settings',
     defaultMessage: 'Settings',
@@ -73,5 +77,9 @@ export default defineMessages({
   edit: {
     id: 'global.edit',
     defaultMessage: 'Edit',
+  },
+  clearCache: {
+    id: 'global.clearCache',
+    defaultMessage: 'Clear cache',
   },
 });

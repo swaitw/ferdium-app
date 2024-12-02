@@ -1,15 +1,16 @@
-import { Component, ReactElement } from 'react';
 import { inject, observer } from 'mobx-react';
+import { Component, type ReactElement } from 'react';
 import { ThemeProvider } from 'react-jss';
 import { Outlet } from 'react-router-dom';
-
-import { StoresProps } from '../../@types/ferdium-components.types';
+import type { StoresProps } from '../../@types/ferdium-components.types';
 import AuthLayout from '../../components/auth/AuthLayout';
 import AppLoader from '../../components/ui/AppLoader';
 
-interface AuthLayoutContainerProps extends StoresProps {}
+interface IProps extends StoresProps {}
 
-class AuthLayoutContainer extends Component<AuthLayoutContainerProps> {
+@inject('stores', 'actions')
+@observer
+class AuthLayoutContainer extends Component<IProps> {
   render(): ReactElement {
     const { stores, actions } = this.props;
     const { app, features, globalError, user } = stores;
@@ -39,7 +40,6 @@ class AuthLayoutContainer extends Component<AuthLayoutContainerProps> {
       <ThemeProvider theme={stores.ui.theme}>
         <AuthLayout
           error={globalError.response}
-          pathname={stores.router.location.pathname}
           isOnline={app.isOnline}
           isAPIHealthy={!app.healthCheckRequest.isError}
           retryHealthCheck={actions.app.healthCheck}
@@ -49,6 +49,7 @@ class AuthLayoutContainer extends Component<AuthLayoutContainerProps> {
           appUpdateIsDownloaded={
             app.updateStatus === app.updateStatusTypes.DOWNLOADED
           }
+          updateVersion={app.updateVersion}
         >
           <Outlet />
         </AuthLayout>
@@ -57,4 +58,4 @@ class AuthLayoutContainer extends Component<AuthLayoutContainerProps> {
   }
 }
 
-export default inject('stores', 'actions')(observer(AuthLayoutContainer));
+export default AuthLayoutContainer;

@@ -5,51 +5,30 @@ import {
 } from '@mdi/js';
 import Icon from '@mdi/react';
 import classnames from 'classnames';
-import { ChangeEvent, Component, createRef } from 'react';
-import injectStyle, { WithStylesProps } from 'react-jss';
-
-import { Theme } from '../../../themes';
-import { IFormField } from '../typings/generic';
-
+import { noop } from 'lodash';
+import {
+  type ChangeEvent,
+  Component,
+  type ReactElement,
+  createRef,
+} from 'react';
+import withStyles, { type WithStylesProps } from 'react-jss';
+import {
+  isArrowDownKeyPress,
+  isArrowUpKeyPress,
+  isEnterKeyPress,
+} from '../../../jsUtils';
+import type { Theme } from '../../../themes';
+// biome-ignore lint/suspicious/noShadowRestrictedNames: <explanation>
 import Error from '../error';
 import Label from '../label';
+import type { IFormField } from '../typings/generic';
 import Wrapper from '../wrapper';
-
-interface IOptions {
-  [index: string]: string;
-}
-
-interface IData {
-  [index: string]: string;
-}
-
-interface IProps extends IFormField, WithStylesProps<typeof styles> {
-  actionText: string;
-  className?: string;
-  inputClassName?: string;
-  defaultValue?: string;
-  disabled?: boolean;
-  id?: string;
-  name: string;
-  options: IOptions;
-  value: string;
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  showSearch: boolean;
-  data: IData;
-}
-
-interface IState {
-  open: boolean;
-  value: string;
-  needle: string;
-  selected: number;
-  options: IOptions;
-}
 
 let popupTransition: string = 'none';
 let toggleTransition: string = 'none';
 
-if (window && window.matchMedia('(prefers-reduced-motion: no-preference)')) {
+if (window?.matchMedia('(prefers-reduced-motion: no-preference)')) {
   popupTransition = 'all 0.3s';
   toggleTransition = 'transform 0.3s';
 }
@@ -149,22 +128,38 @@ const styles = (theme: Theme) => ({
   input: {},
 });
 
-class SelectComponent extends Component<IProps> {
-  public static defaultProps = {
-    onChange: () => {},
-    showLabel: true,
-    disabled: false,
-    error: '',
-  };
+interface IOptions {
+  [index: string]: string;
+}
 
-  state = {
-    open: false,
-    value: '',
-    needle: '',
-    selected: 0,
-    options: null,
-  };
+interface IData {
+  [index: string]: string;
+}
 
+interface IProps extends IFormField, WithStylesProps<typeof styles> {
+  actionText: string;
+  className?: string;
+  inputClassName?: string;
+  defaultValue?: string;
+  disabled?: boolean;
+  id?: string;
+  name: string;
+  options: IOptions;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLInputElement> | string) => void;
+  showSearch: boolean;
+  data: IData;
+}
+
+interface IState {
+  open: boolean;
+  value: string;
+  needle: string;
+  selected: number;
+  options: IOptions | null;
+}
+
+class SelectComponent extends Component<IProps, IState> {
   private componentRef = createRef<HTMLDivElement>();
 
   private inputRef = createRef<HTMLInputElement>();
@@ -175,9 +170,12 @@ class SelectComponent extends Component<IProps> {
 
   private activeOptionRef = createRef<HTMLDivElement>();
 
-  private keyListener: any;
+  private keyListener: (e: KeyboardEvent) => void;
 
-  static getDerivedStateFromProps(nextProps: IProps, prevState: IProps) {
+  static getDerivedStateFromProps(
+    nextProps: IProps,
+    prevState: IProps,
+  ): Partial<IState> {
     if (nextProps.value && nextProps.value !== prevState.value) {
       return {
         value: nextProps.value,
@@ -189,33 +187,26 @@ class SelectComponent extends Component<IProps> {
     };
   }
 
-  componentDidUpdate() {
-    const { open } = this.state;
+  constructor(props: IProps) {
+    super(props);
 
-    if (this.searchInputRef && this.searchInputRef.current && open) {
-      this.searchInputRef.current.focus();
-    }
+    this.state = {
+      open: false,
+      value: '',
+      needle: '',
+      selected: 0,
+      options: null,
+    };
+
+    this.keyListener = noop;
+    this.arrowKeysHandler = this.arrowKeysHandler.bind(this);
   }
 
-  componentDidMount() {
-    if (this.inputRef && this.inputRef.current) {
-      const { data } = this.props;
-
-      if (data) {
-        Object.keys(data).map(
-          // eslint-disable-next-line no-return-assign
-          key => (this.inputRef.current!.dataset[key] = data[key]),
-        );
-      }
-    }
-
-    window.addEventListener('keydown', this.arrowKeysHandler.bind(this), false);
-  }
-
-  componentWillMount() {
+  // eslint-disable-next-line @eslint-react/no-unsafe-component-will-mount
+  UNSAFE_componentWillMount(): void {
     const { value } = this.props;
 
-    if (this.componentRef && this.componentRef.current) {
+    if (this.componentRef?.current) {
       this.componentRef.current.removeEventListener(
         'keydown',
         this.keyListener,
@@ -231,17 +222,37 @@ class SelectComponent extends Component<IProps> {
     this.setFilter();
   }
 
-  componentWillUnmount() {
-    // eslint-disable-next-line unicorn/no-invalid-remove-event-listener
-    window.removeEventListener('keydown', this.arrowKeysHandler.bind(this));
+  componentDidMount(): void {
+    if (this.inputRef?.current) {
+      const { data } = this.props;
+
+      if (data) {
+        for (const key of Object.keys(data))
+          this.inputRef.current!.dataset[key] = data[key];
+      }
+    }
+
+    window.addEventListener('keydown', this.arrowKeysHandler, false);
   }
 
-  setFilter(needle = '') {
+  componentDidUpdate(): void {
+    const { open } = this.state;
+
+    if (this.searchInputRef?.current && open) {
+      this.searchInputRef.current.focus();
+    }
+  }
+
+  componentWillUnmount(): void {
+    window.removeEventListener('keydown', this.arrowKeysHandler);
+  }
+
+  setFilter(needle = ''): void {
     const { options } = this.props;
 
     let filteredOptions = {};
     if (needle) {
-      Object.keys(options).map(key => {
+      for (const key of Object.keys(options)) {
         if (
           key.toLocaleLowerCase().startsWith(needle.toLocaleLowerCase()) ||
           options[key]
@@ -252,7 +263,7 @@ class SelectComponent extends Component<IProps> {
             [`${key}`]: options[key],
           });
         }
-      });
+      }
     } else {
       filteredOptions = options;
     }
@@ -264,7 +275,7 @@ class SelectComponent extends Component<IProps> {
     });
   }
 
-  select(key: string) {
+  select(key: string): void {
     this.setState(() => ({
       value: key,
       open: false,
@@ -273,41 +284,36 @@ class SelectComponent extends Component<IProps> {
     this.setFilter();
 
     if (this.props.onChange) {
-      this.props.onChange(key as any);
+      this.props.onChange(key);
     }
   }
 
-  arrowKeysHandler(e: KeyboardEvent) {
+  arrowKeysHandler(e: KeyboardEvent): void {
     const { selected, open, options } = this.state;
 
     if (!open) return;
 
-    if (e.keyCode === 38 || e.keyCode === 40) {
+    if (isArrowUpKeyPress(e.key) || isArrowDownKeyPress(e.key)) {
       e.preventDefault();
     }
 
-    if (this.componentRef && this.componentRef.current) {
-      if (e.keyCode === 38 && selected > 0) {
+    if (this.componentRef?.current) {
+      if (isArrowUpKeyPress(e.key) && selected > 0) {
         this.setState((state: IState) => ({
           selected: state.selected - 1,
         }));
       } else if (
-        e.keyCode === 40 &&
+        isArrowDownKeyPress(e.key) &&
         selected < Object.keys(options!).length - 1
       ) {
         this.setState((state: IState) => ({
           selected: state.selected + 1,
         }));
-      } else if (e.keyCode === 13) {
+      } else if (isEnterKeyPress(e.key)) {
         this.select(Object.keys(options!)[selected]);
       }
 
-      if (
-        this.activeOptionRef &&
-        this.activeOptionRef.current &&
-        this.scrollContainerRef &&
-        this.scrollContainerRef.current
-      ) {
+      if (this.activeOptionRef?.current && this.scrollContainerRef?.current) {
         const containerTopOffset = this.scrollContainerRef.current.offsetTop;
         const optionTopOffset = this.activeOptionRef.current.offsetTop;
 
@@ -316,46 +322,33 @@ class SelectComponent extends Component<IProps> {
         this.scrollContainerRef.current.scrollTop = topOffset - 35;
       }
     }
-
-    switch (e.keyCode) {
-      case 37:
-      case 39:
-      case 38:
-      case 40: // Arrow keys
-      case 32:
-        break; // Space
-      default:
-        break; // do not block other keys
-    }
   }
 
-  render() {
+  render(): ReactElement {
     const {
       actionText,
       classes,
       className,
       defaultValue,
-      disabled,
-      error,
       id,
       inputClassName,
       name,
       label,
-      showLabel,
       showSearch,
-      onChange,
       required,
+      onChange = noop,
+      showLabel = true,
+      disabled = false,
+      error = '',
     } = this.props;
 
     const { open, needle, value, selected, options } = this.state;
 
-    let selection = '';
+    let selection = actionText;
     if (!value && defaultValue && options![defaultValue]) {
       selection = options![defaultValue];
     } else if (value && options![value]) {
       selection = options![value];
-    } else {
-      selection = actionText;
     }
 
     return (
@@ -382,12 +375,12 @@ class SelectComponent extends Component<IProps> {
                 [`${classes.hasError}`]: error,
               })}
               onClick={
-                !disabled
-                  ? () =>
+                disabled
+                  ? noop
+                  : () =>
                       this.setState((state: IState) => ({
                         open: !state.open,
                       }))
-                  : () => {}
               }
             >
               {selection}
@@ -430,6 +423,7 @@ class SelectComponent extends Component<IProps> {
               ref={this.scrollContainerRef}
             >
               {Object.keys(options!).map((key, i) => (
+                // eslint-disable-next-line jsx-a11y/no-static-element-interactions
                 <div
                   key={key}
                   onClick={() => this.select(key)}
@@ -440,6 +434,8 @@ class SelectComponent extends Component<IProps> {
                   })}
                   onMouseOver={() => this.setState({ selected: i })}
                   ref={selected === i ? this.activeOptionRef : null}
+                  onKeyUp={noop}
+                  onFocus={noop}
                 >
                   {options![key]}
                 </div>
@@ -463,6 +459,4 @@ class SelectComponent extends Component<IProps> {
   }
 }
 
-export default injectStyle(styles, { injectTheme: true })(
-  SelectComponent,
-);
+export default withStyles(styles, { injectTheme: true })(SelectComponent);

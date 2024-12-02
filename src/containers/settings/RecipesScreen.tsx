@@ -1,42 +1,45 @@
 import { readJsonSync } from 'fs-extra';
-import { Component, ReactElement } from 'react';
-import { autorun, IReactionDisposer } from 'mobx';
+import { type IReactionDisposer, autorun } from 'mobx';
 import { inject, observer } from 'mobx-react';
+import { Component, type ReactElement } from 'react';
 
-import { Params } from 'react-router-dom';
-import Recipe from '../../models/Recipe';
-import { StoresProps } from '../../@types/ferdium-components.types';
+import type { Params } from 'react-router-dom';
+import type { StoresProps } from '../../@types/ferdium-components.types';
 import RecipesDashboard from '../../components/settings/recipes/RecipesDashboard';
 import ErrorBoundary from '../../components/util/ErrorBoundary';
-import { CUSTOM_WEBSITE_RECIPE_ID, FRANZ_DEV_DOCS } from '../../config';
-import { userDataRecipesPath } from '../../environment-remote';
-import { asarRecipesPath } from '../../helpers/asar-helpers';
-import { communityRecipesStore } from '../../features/communityRecipes';
-import RecipePreview from '../../models/RecipePreview';
-import { openPath } from '../../helpers/url-helpers';
 import withParams from '../../components/util/WithParams';
+import { CUSTOM_WEBSITE_RECIPE_ID, FERDIUM_DEV_DOCS } from '../../config';
+import { userDataRecipesPath } from '../../environment-remote';
+import { communityRecipesStore } from '../../features/communityRecipes';
+import { asarRecipesPath } from '../../helpers/asar-helpers';
+import { openPath } from '../../helpers/url-helpers';
+import type Recipe from '../../models/Recipe';
+import RecipePreview from '../../models/RecipePreview';
 
-interface RecipesScreenProps extends StoresProps {
+interface IProps extends Partial<StoresProps> {
   params: Params;
 }
 
-class RecipesScreen extends Component<RecipesScreenProps> {
-  state: {
-    needle: string | null;
-    currentFilter: string;
-  } = {
-    needle: null,
-    currentFilter: 'featured',
-  };
+interface IState {
+  needle: string | null;
+  currentFilter: string;
+}
 
+@inject('stores', 'actions')
+@observer
+class RecipesScreen extends Component<IProps, IState> {
   autorunDisposer: IReactionDisposer | null = null;
 
   customRecipes: Recipe[] = [];
 
-  constructor(props: RecipesScreenProps) {
+  constructor(props: IProps) {
     super(props);
 
     this.customRecipes = readJsonSync(asarRecipesPath('all.json'));
+    this.state = {
+      needle: null,
+      currentFilter: 'featured',
+    };
   }
 
   componentDidMount(): void {
@@ -55,7 +58,7 @@ class RecipesScreen extends Component<RecipesScreenProps> {
   }
 
   componentWillUnmount(): void {
-    this.props.stores.services.resetStatus();
+    this.props.stores!.services.resetStatus();
 
     if (typeof this.autorunDisposer === 'function') {
       this.autorunDisposer();
@@ -66,7 +69,7 @@ class RecipesScreen extends Component<RecipesScreenProps> {
     if (needle === '') {
       this.resetSearch();
     } else {
-      const { search } = this.props.actions.recipePreview;
+      const { search } = this.props.actions!.recipePreview;
       this.setState({ needle });
       search({ needle });
     }
@@ -106,10 +109,8 @@ class RecipesScreen extends Component<RecipesScreenProps> {
   }
 
   render(): ReactElement {
-    const { recipePreviews, recipes, services } = this.props.stores;
-
-    const { app: appActions, service: serviceActions } = this.props.actions;
-
+    const { recipePreviews, recipes, services } = this.props.stores!;
+    const { app: appActions, service: serviceActions } = this.props.actions!;
     const filter = this.state.currentFilter;
 
     let recipeFilter;
@@ -128,8 +129,9 @@ class RecipesScreen extends Component<RecipesScreenProps> {
 
     const { needle } = this.state;
     const allRecipes =
-      needle !== null
-        ? this.prepareRecipes([
+      needle === null
+        ? recipeFilter
+        : this.prepareRecipes([
             // All search recipes from server
             ...recipePreviews.searchResults,
             // All search recipes from local recipes
@@ -142,8 +144,7 @@ class RecipesScreen extends Component<RecipesScreenProps> {
                   ),
               ),
             ),
-          ]).sort(this._sortByName)
-        : recipeFilter;
+          ]).sort(this._sortByName);
 
     const customWebsiteRecipe = recipePreviews.all.find(
       service => service.id === CUSTOM_WEBSITE_RECIPE_ID,
@@ -163,7 +164,6 @@ class RecipesScreen extends Component<RecipesScreenProps> {
           recipes={allRecipes}
           customWebsiteRecipe={customWebsiteRecipe}
           isLoading={isLoading}
-          addedServiceCount={services.all.length}
           hasLoadedRecipes={
             recipePreviews.featuredRecipePreviewsRequest.wasExecuted
           }
@@ -176,7 +176,7 @@ class RecipesScreen extends Component<RecipesScreenProps> {
           recipeDirectory={recipeDirectory}
           openRecipeDirectory={() => openPath(recipeDirectory)}
           openDevDocs={() =>
-            appActions.openExternalUrl({ url: FRANZ_DEV_DOCS })
+            appActions.openExternalUrl({ url: FERDIUM_DEV_DOCS })
           }
         />
       </ErrorBoundary>
@@ -184,4 +184,4 @@ class RecipesScreen extends Component<RecipesScreenProps> {
   }
 }
 
-export default withParams(inject('stores', 'actions')(observer(RecipesScreen)));
+export default withParams(RecipesScreen);

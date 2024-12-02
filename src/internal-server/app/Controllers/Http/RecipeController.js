@@ -3,8 +3,9 @@ const Drive = use('Drive');
 const { validateAll } = use('Validator');
 const Env = use('Env');
 
-const fetch = require('node-fetch');
-const debug = require('../../../../preload-safe-debug')('Ferdium:internalServer:RecipeController');
+const debug = require('../../../../preload-safe-debug')(
+  'Ferdium:internalServer:RecipeController',
+);
 const { LIVE_FERDIUM_API } = require('../../../../config');
 const { convertToJSON } = require('../../../../jsUtils');
 const { API_VERSION } = require('../../../../environment-remote');
@@ -58,8 +59,8 @@ class RecipeController {
       }));
     } else {
       let remoteResults = [];
-      // eslint-disable-next-line eqeqeq
-      if (Env.get('CONNECT_WITH_FRANZ') == 'true') {
+
+      if (Env.get('CONNECT_WITH_FRANZ') === 'true') {
         const recipesUrlFetch = await fetch(
           `${RECIPES_URL}/search?needle=${encodeURIComponent(needle)}`,
         );
@@ -87,15 +88,11 @@ class RecipeController {
   }
 
   // Return an empty array
-  update({
-    response,
-  }) {
+  update({ response }) {
     return response.send([]);
   }
 
-  async popularRecipes({
-    response,
-  }) {
+  async popularRecipes({ response }) {
     const recipesUrlFetch = await fetch(`${RECIPES_URL}/popular`);
     const featuredRecipes = convertToJSON(await recipesUrlFetch.text());
     return response.send(featuredRecipes);
@@ -126,8 +123,8 @@ class RecipeController {
     if (await Drive.exists(`${service}.tar.gz`)) {
       return response.send(await Drive.get(`${service}.tar.gz`));
     }
-    // eslint-disable-next-line eqeqeq
-    if (Env.get('CONNECT_WITH_FRANZ') == 'true') {
+
+    if (Env.get('CONNECT_WITH_FRANZ') === 'true') {
       return response.redirect(`${RECIPES_URL}/download/${service}`);
     }
     return response.status(400).send({

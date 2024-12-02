@@ -1,12 +1,14 @@
+/* eslint-disable no-use-before-define */
 import Icon from '@mdi/react';
 import classnames from 'classnames';
-import { Property } from 'csstype';
-import { Component, MouseEvent } from 'react';
-import withStyles, { WithStylesProps } from 'react-jss';
-import Loader from 'react-loader';
-
-import { Theme } from '../../../themes';
-import { IFormField } from '../typings/generic';
+import type { Property } from 'csstype';
+import { noop } from 'lodash';
+import { Component, type MouseEventHandler } from 'react';
+import withStyles, { type WithStylesProps } from 'react-jss';
+import { DEFAULT_LOADER_COLOR } from '../../../config';
+import type { Theme } from '../../../themes';
+import Loader from '../loader/index';
+import type { IFormField } from '../typings/generic';
 
 type ButtonType =
   | 'primary'
@@ -15,24 +17,6 @@ type ButtonType =
   | 'danger'
   | 'warning'
   | 'inverted';
-
-interface IProps extends IFormField, WithStylesProps<typeof styles> {
-  className?: string;
-  label?: string;
-  disabled?: boolean;
-  id?: string;
-  type?: 'button' | 'reset' | 'submit' | undefined;
-  onClick: (
-    event: MouseEvent<HTMLButtonElement> | MouseEvent<HTMLAnchorElement>,
-  ) => void;
-  buttonType?: ButtonType;
-  loaded?: boolean;
-  busy?: boolean;
-  icon?: string;
-  href?: string;
-  target?: string;
-  htmlForm?: string;
-}
 
 let buttonTransition: string = 'none';
 let loaderContainerTransition: string = 'none';
@@ -128,19 +112,11 @@ const styles = (theme: Theme) => ({
   disabled: {
     opacity: theme.inputDisabledOpacity,
   },
-  loader: {
-    position: 'relative' as Property.Position,
-    width: 20,
-    height: 18,
-    zIndex: 9999,
-  },
   loaderContainer: {
-    width: (props: IProps): string => (!props.busy ? '0' : '40px'),
     height: 20,
-    overflow: 'hidden',
     transition: loaderContainerTransition,
-    marginLeft: (props: IProps): number => (!props.busy ? 10 : 20),
-    marginRight: (props: IProps): number => (!props.busy ? -10 : -20),
+    marginLeft: (props: IProps): number => (props.busy ? 20 : 10),
+    marginRight: (props: IProps): number => (props.busy ? -20 : -10),
     position: (): Property.Position => 'inherit',
   },
   icon: {
@@ -148,38 +124,38 @@ const styles = (theme: Theme) => ({
   },
 });
 
-class ButtonComponent extends Component<IProps> {
-  customDefaultProps: {
-    disabled: boolean;
-    type: 'button' | 'reset' | 'submit' | undefined;
-    onClick: (
-      event: MouseEvent<HTMLButtonElement> | MouseEvent<HTMLAnchorElement>,
-    ) => void;
-    buttonType: ButtonType;
-    busy: boolean;
-  } = {
-    type: 'button',
-    disabled: false,
-    onClick: () => null,
-    buttonType: 'primary' as ButtonType,
-    busy: false,
-  };
+interface IProps extends IFormField, WithStylesProps<typeof styles> {
+  className?: string;
+  label?: string;
+  disabled?: boolean;
+  id?: string;
+  type?: 'button' | 'reset' | 'submit';
+  onClick?: MouseEventHandler<HTMLInputElement>;
+  buttonType?: ButtonType;
+  loaded?: boolean;
+  busy?: boolean;
+  icon?: string;
+  href?: string;
+  target?: string;
+  htmlForm?: string;
+}
 
-  state = {
-    busy: false,
-  };
+interface IState {
+  busy: boolean;
+}
 
+class ButtonComponent extends Component<IProps, IState> {
   constructor(props: IProps) {
     super(props);
 
     this.state = {
-      busy: props.busy || false,
+      busy: this.props.busy || false,
     };
   }
 
-  static getDerivedStateFromProps(nextProps: IProps) {
+  static getDerivedStateFromProps(nextProps: IProps): IState {
     return {
-      busy: nextProps.busy,
+      busy: nextProps.busy || false,
     };
   }
 
@@ -188,44 +164,40 @@ class ButtonComponent extends Component<IProps> {
       classes,
       className,
       // theme,
-      disabled,
       id,
       label,
-      type,
-      onClick,
-      buttonType,
       loaded,
       icon,
       href,
       target,
       htmlForm,
-    } = { ...this.customDefaultProps, ...this.props };
+      type = 'button',
+      disabled = false,
+      onClick = noop,
+      buttonType = 'primary' as ButtonType,
+    } = this.props;
 
     const { busy } = this.state;
     let showLoader = false;
+
     if (loaded) {
       showLoader = !loaded;
       console.warn(
         'Ferdium Button prop `loaded` will be deprecated in the future. Please use `busy` instead',
       );
     }
+
     if (busy) {
       showLoader = busy;
     }
 
     const content = (
       <>
-        <div className={classes.loaderContainer}>
-          {showLoader && (
-            <Loader
-              loaded={false}
-              width={4}
-              scale={0.45}
-              // color={theme.buttonLoaderColor[buttonType!]}
-              parentClassName={classes.loader}
-            />
-          )}
-        </div>
+        {showLoader && (
+          <div className={classes.loaderContainer}>
+            <Loader size={18} color={DEFAULT_LOADER_COLOR} />
+          </div>
+        )}
         <div className={classes.label}>
           {icon && <Icon path={icon} size={0.8} className={classes.icon} />}
           {label}
@@ -233,24 +205,7 @@ class ButtonComponent extends Component<IProps> {
       </>
     );
 
-    const wrapperComponent = !href ? (
-      <button
-        id={id}
-        type={type}
-        onClick={onClick}
-        className={classnames({
-          [`${classes.button}`]: true,
-          [`${classes[buttonType as ButtonType]}`]: true,
-          [`${classes.disabled}`]: disabled,
-          [`${className}`]: className,
-        })}
-        disabled={disabled}
-        data-type="franz-button"
-        {...(htmlForm && { form: htmlForm })}
-      >
-        {content}
-      </button>
-    ) : (
+    const wrapperComponent = href ? (
       <a
         href={href}
         target={target}
@@ -265,6 +220,24 @@ class ButtonComponent extends Component<IProps> {
       >
         {content}
       </a>
+    ) : (
+      <button
+        id={id}
+        // eslint-disable-next-line react/button-has-type, @eslint-react/dom/no-missing-button-type
+        type={type}
+        onClick={onClick}
+        className={classnames({
+          [`${classes.button}`]: true,
+          [`${classes[buttonType as ButtonType]}`]: true,
+          [`${classes.disabled}`]: disabled,
+          [`${className}`]: className,
+        })}
+        disabled={disabled}
+        data-type="franz-button"
+        {...(htmlForm && { form: htmlForm })}
+      >
+        {content}
+      </button>
     );
 
     return wrapperComponent;

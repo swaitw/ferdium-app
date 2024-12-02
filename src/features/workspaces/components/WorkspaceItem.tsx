@@ -1,9 +1,8 @@
-import { Component } from 'react';
-import PropTypes from 'prop-types';
+import { noop } from 'lodash';
 import { observer } from 'mobx-react';
-import injectSheet from 'react-jss';
-
-import Workspace from '../models/Workspace';
+import { Component, type ReactElement } from 'react';
+import withStyles, { type WithStylesProps } from 'react-jss';
+import type Workspace from '../models/Workspace';
 
 const styles = theme => ({
   row: {
@@ -16,30 +15,24 @@ const styles = theme => ({
   columnName: {},
 });
 
-type Props = {
-  classes: any;
-  workspace: any;
-  onItemClick: (workspace) => void;
-};
+interface IProps extends WithStylesProps<typeof styles> {
+  workspace: Workspace;
+  onItemClick: (workspace: Workspace) => void;
+}
 
-class WorkspaceItem extends Component<Props> {
-  static propTypes = {
-    classes: PropTypes.object.isRequired,
-    workspace: PropTypes.instanceOf(Workspace).isRequired,
-    onItemClick: PropTypes.func.isRequired,
-  };
-
-  render() {
+@observer
+class WorkspaceItem extends Component<IProps> {
+  render(): ReactElement {
     const { classes, workspace, onItemClick } = this.props;
 
     return (
       <tr className={classes.row}>
-        <td onClick={() => onItemClick(workspace)}>{workspace.name}</td>
+        <td onClick={() => onItemClick(workspace)} onKeyDown={noop}>
+          {workspace.name}
+        </td>
       </tr>
     );
   }
 }
 
-export default injectSheet(styles, { injectTheme: true })(
-  observer(WorkspaceItem),
-);
+export default withStyles(styles, { injectTheme: true })(WorkspaceItem);

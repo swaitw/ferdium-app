@@ -49,7 +49,7 @@ if [ -d "$FERDIUM_PATH" ]; then
 fi
 
 if mv -vf "$FERDI_PATH" "$FERDIUM_PATH"; then
-  echo "Files exported succesfully"
+  echo "Files exported successfully"
 else
   echo "ERROR!"
   echo "No user data was found to be exported. Exiting..."
@@ -65,6 +65,6 @@ else
   echo "WARNING: Your data was partially migrated!"
   echo "It was detected that your account is using Ferdi servers to sync your data."
   echo "Please, check this guide on how to export and import your data manually:"
-  echo "https://github.com/ferdium/ferdi/blob/main/MIGRATION.md"
+  echo "https://github.com/ferdium/ferdi/blob/main/docs/MIGRATION.md"
   echo "********************************************"
 fi

@@ -1,10 +1,11 @@
-import { Component } from 'react';
-import { observer } from 'mobx-react';
-import injectSheet from 'react-jss';
 import classnames from 'classnames';
-
-import Toggle from '../../../components/ui/toggle/index';
+import { noop } from 'lodash';
+import { observer } from 'mobx-react';
+import { Component, type ReactElement } from 'react';
+import withStyles, { type WithStylesProps } from 'react-jss';
 import ServiceIcon from '../../../components/ui/ServiceIcon';
+import Toggle from '../../../components/ui/toggle';
+import type Service from '../../../models/Service';
 
 const styles = theme => ({
   listItem: {
@@ -29,19 +30,20 @@ const styles = theme => ({
   },
 });
 
-type Props = {
-  classes: any;
+interface IProps extends WithStylesProps<typeof styles> {
   isInWorkspace: boolean;
   onToggle: () => void;
-  service: any;
-};
+  service: Service;
+}
 
-class WorkspaceServiceListItem extends Component<Props> {
-  render() {
+@observer
+class WorkspaceServiceListItem extends Component<IProps> {
+  render(): ReactElement {
     const { classes, isInWorkspace, onToggle, service } = this.props;
-
     return (
-      <div className={classes.listItem}>
+      // onclick in below div used to fix bug raised under toggle duplicate component removal
+      // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+      <div className={classes.listItem} onClick={onToggle} onKeyDown={noop}>
         <ServiceIcon className={classes.serviceIcon} service={service} />
         <span
           className={classnames([
@@ -61,6 +63,6 @@ class WorkspaceServiceListItem extends Component<Props> {
   }
 }
 
-export default injectSheet(styles, { injectTheme: true })(
-  observer(WorkspaceServiceListItem),
+export default withStyles(styles, { injectTheme: true })(
+  WorkspaceServiceListItem,
 );

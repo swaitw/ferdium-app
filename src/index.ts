@@ -1,50 +1,60 @@
 /* eslint-disable import/first */
 
+import { EventEmitter } from 'node:events';
+import { join } from 'node:path';
 import {
-  app,
   BrowserWindow,
+  app,
+  desktopCapturer,
+  dialog,
   globalShortcut,
   ipcMain,
   session,
-  dialog,
-  desktopCapturer,
 } from 'electron';
 
-import { emptyDirSync, ensureFileSync } from 'fs-extra';
-import { join } from 'path';
+import { initialize } from 'electron-react-titlebar/main';
 import windowStateKeeper from 'electron-window-state';
+import { emptyDirSync, ensureFileSync } from 'fs-extra';
 import minimist from 'minimist';
 import ms from 'ms';
-import { EventEmitter } from 'events';
 import { enableWebContents, initializeRemote } from './electron-util';
 import enforceMacOSAppLocation from './enforce-macos-app-location';
 
 initializeRemote();
 
-import { DEFAULT_APP_SETTINGS, DEFAULT_WINDOW_OPTIONS } from './config';
+import {
+  DEFAULT_APP_SETTINGS,
+  DEFAULT_SHORTCUTS,
+  DEFAULT_WINDOW_OPTIONS,
+} from './config';
 
-import { isMac, isWindows, isLinux, altKey } from './environment';
+import { altKey, isLinux, isMac, isWindows } from './environment';
 import {
   isDevMode,
-  userDataRecipesPath,
+  protocolClient,
   userDataPath,
+  userDataRecipesPath,
 } from './environment-remote';
 import { ifUndefined } from './jsUtils';
 
-import { mainIpcHandler as basicAuthHandler } from './features/basicAuth';
-import ipcApi from './electron/ipc-api';
-import Tray from './lib/Tray';
-import DBus from './lib/DBus';
 import Settings from './electron/Settings';
 import handleDeepLink from './electron/deepLinking';
+import './electron/exception';
+// eslint-disable-next-line import/no-cycle
+import ipcApi from './electron/ipc-api';
 import isPositionValid from './electron/windowUtils';
+import { mainIpcHandler as basicAuthHandler } from './features/basicAuth';
+import DBus from './lib/DBus';
+import TrayIcon from './lib/Tray';
 // @ts-expect-error Cannot find module './package.json' or its corresponding type declarations.
 import { appId } from './package.json';
-import './electron/exception';
 
 import { asarPath } from './helpers/asar-helpers';
+import { checkIfCertIsPresent } from './helpers/certs-helpers';
+import { translateTo } from './helpers/translation-helpers';
 import { openExternalUrl } from './helpers/url-helpers';
 import userAgent from './helpers/userAgent-helpers';
+import { darkThemeGrayDarkest } from './themes/legacy';
 
 const debug = require('./preload-safe-debug')('Ferdium:App');
 
@@ -58,23 +68,24 @@ let mainWindow: BrowserWindow | undefined;
 let willQuitApp = false;
 let overrideAppQuitForUpdate = false;
 
+// eslint-disable-next-line unicorn/prefer-event-target
 export const appEvents = new EventEmitter();
 
 // Register methods to be called once the window has been loaded.
 let onDidLoadFns: any[] | null = [];
 
-function onDidLoad(fn: {
+const onDidLoad = (fn: {
   (window: BrowserWindow): void;
   (window: BrowserWindow): void;
   (window: BrowserWindow): void;
   (arg0: BrowserWindow): void;
-}): void {
+}): void => {
   if (onDidLoadFns) {
     onDidLoadFns.push(fn);
   } else if (mainWindow) {
     fn(mainWindow);
   }
-}
+};
 
 // Ensure that the recipe directory exists
 emptyDirSync(userDataRecipesPath('temp'));
@@ -88,22 +99,27 @@ if (isWindows) {
 // Initialize Settings
 const settings = new Settings('app', DEFAULT_APP_SETTINGS);
 const proxySettings = new Settings('proxy');
+const shortcutSettings = new Settings('shortcuts', DEFAULT_SHORTCUTS);
 
-const retrieveSettingValue = (key: string, defaultValue: boolean) =>
-  ifUndefined<boolean>(settings.get(key), defaultValue);
+const retrieveSettingValue = (key: string, defaultValue: boolean | string) =>
+  ifUndefined<boolean | string>(settings.get(key), defaultValue);
+
+// TODO: Commenting out sentry to fix https://github.com/ferdium/ferdium-app/issues/814
+// if (retrieveSettingValue('sentry', DEFAULT_APP_SETTINGS.sentry)) {
+//   // eslint-disable-next-line global-require
+//   require('./sentry');
+// }
 
 const liftSingleInstanceLock = retrieveSettingValue(
   'liftSingleInstanceLock',
-  false,
+  DEFAULT_APP_SETTINGS.liftSingleInstanceLock,
 );
 
 // Force single window
 const gotTheLock = liftSingleInstanceLock
   ? true
   : app.requestSingleInstanceLock();
-if (!gotTheLock) {
-  app.quit();
-} else {
+if (gotTheLock) {
   app.on('second-instance', (_event, argv) => {
     // Someone tried to run a second instance, we should focus our window.
     if (mainWindow) {
@@ -119,9 +135,7 @@ if (!gotTheLock) {
         onDidLoad((window: BrowserWindow) => {
           // Keep only command line / deep linked arguments
           const url = argv.slice(1);
-          if (url) {
-            handleDeepLink(window, url.toString());
-          }
+          handleDeepLink(window, url.toString());
 
           if (argv.includes('--reset-window')) {
             // Needs to be delayed to not interfere with mainWindow.restore();
@@ -147,23 +161,29 @@ if (!gotTheLock) {
       }
     }
   });
-}
-
-// Fix Unity indicator issue
-// https://github.com/electron/electron/issues/9046
-if (
-  isLinux &&
-  process.env.XDG_CURRENT_DESKTOP &&
-  ['Pantheon', 'Unity:Unity7'].includes(process.env.XDG_CURRENT_DESKTOP)
-) {
-  process.env.XDG_CURRENT_DESKTOP = 'Unity';
+} else {
+  app.quit();
 }
 
 // Disable GPU acceleration
-if (!retrieveSettingValue('enableGPUAcceleration', false)) {
+if (
+  !retrieveSettingValue(
+    'enableGPUAcceleration',
+    DEFAULT_APP_SETTINGS.enableGPUAcceleration,
+  )
+) {
   debug('Disable GPU Acceleration');
   app.disableHardwareAcceleration();
 }
+
+const webRTCIPHandlingPolicy = retrieveSettingValue(
+  'webRTCIPHandlingPolicy',
+  DEFAULT_APP_SETTINGS.webRTCIPHandlingPolicy,
+) as
+  | 'disable_non_proxied_udp'
+  | 'default'
+  | 'default_public_interface_only'
+  | 'default_public_and_private_interfaces';
 
 const createWindow = () => {
   // Remember window size
@@ -184,9 +204,24 @@ const createWindow = () => {
   }
 
   // Create the browser window.
-  const backgroundColor = retrieveSettingValue('darkMode', false)
-    ? '#1E1E1E'
-    : settings.get('accentColor');
+  const backgroundColor = retrieveSettingValue(
+    'darkMode',
+    DEFAULT_APP_SETTINGS.darkMode,
+  )
+    ? darkThemeGrayDarkest
+    : (retrieveSettingValue(
+        'accentColor',
+        DEFAULT_APP_SETTINGS.accentColor,
+      ) as string);
+
+  const linuxMainWindowConf = {
+    icon: asarPath(
+      join(
+        isDevMode ? `${__dirname}../src/` : __dirname,
+        'assets/images/icons/256x256.png',
+      ),
+    ),
+  };
 
   mainWindow = new BrowserWindow({
     x: posX,
@@ -203,14 +238,16 @@ const createWindow = () => {
       spellcheck: retrieveSettingValue(
         'enableSpellchecking',
         DEFAULT_APP_SETTINGS.enableSpellchecking,
-      ),
+      ) as boolean,
       nodeIntegration: true,
       contextIsolation: false,
       webviewTag: true,
     },
+    ...(isLinux ? linuxMainWindowConf : {}),
   });
 
   enableWebContents(mainWindow.webContents);
+  mainWindow.webContents.setWebRTCIPHandlingPolicy(webRTCIPHandlingPolicy);
 
   app.on('browser-window-created', (_, window) => {
     enableWebContents(window.webContents);
@@ -219,8 +256,21 @@ const createWindow = () => {
   app.on('web-contents-created', (_e, contents) => {
     if (contents.getType() === 'webview') {
       enableWebContents(contents);
-      contents.on('new-window', event => {
-        event.preventDefault();
+      contents.setWindowOpenHandler(({ url }) => {
+        openExternalUrl(url);
+        return { action: 'deny' };
+      });
+
+      // Handle will download event from main process (prevent download dialog)
+      contents.session.on('will-download', (_e, item) => {
+        const downloadFolderPath = retrieveSettingValue(
+          'downloadFolderPath',
+          DEFAULT_APP_SETTINGS.downloadFolderPath,
+        ) as string;
+
+        if (downloadFolderPath !== '') {
+          item.setSavePath(join(downloadFolderPath, item.getFilename()));
+        }
       });
     }
   });
@@ -237,7 +287,7 @@ const createWindow = () => {
   });
 
   // Initialize System Tray
-  const trayIcon: Tray = new Tray();
+  const trayIcon: TrayIcon = new TrayIcon();
 
   // Initialize DBus interface
   const dbus = new DBus(trayIcon);
@@ -248,6 +298,7 @@ const createWindow = () => {
     settings: {
       app: settings,
       proxy: proxySettings,
+      shortcuts: shortcutSettings,
     },
     trayIcon,
   });
@@ -270,14 +321,7 @@ const createWindow = () => {
   if (isWindows) {
     onDidLoad((window: BrowserWindow) => {
       const url = process.argv.slice(1);
-      if (
-        url &&
-        // The next line is a workaround after this 71c5237 [chore: Mobx & React-Router upgrade (#406)].
-        // For some reason, the app won't start until because it's trying to route to './build'.
-        url.toString() !== './build'
-      ) {
-        handleDeepLink(window, url.toString());
-      }
+      handleDeepLink(window, url.toString());
     });
   }
 
@@ -346,6 +390,7 @@ const createWindow = () => {
     debug('Window: maximize');
     // @ts-expect-error Property 'isMaximized' does not exist on type 'App'.
     app.isMaximized = true;
+    mainWindow?.setSkipTaskbar(false);
   });
 
   mainWindow.on('unmaximize', () => {
@@ -376,9 +421,12 @@ const createWindow = () => {
   });
 
   if (isMac) {
-    // eslint-disable-next-line global-require
-    const { askFormacOSPermissions } = require('./electron/macOSPermissions');
-    setTimeout(() => askFormacOSPermissions(mainWindow), ms('30s'));
+    // Note: Do not remove the extension. See https://github.com/ferdium/ferdium-app/issues/1755 for explanation
+    import('./electron/macOSPermissions.js').then(macOSPermissions => {
+      const { askFormacOSPermissions } = macOSPermissions;
+
+      setTimeout(() => askFormacOSPermissions(mainWindow!), ms('30s'));
+    });
   }
 
   mainWindow.on('show', () => {
@@ -389,9 +437,9 @@ const createWindow = () => {
   // @ts-expect-error Property 'isMaximized' does not exist on type 'App'.
   app.isMaximized = mainWindow.isMaximized();
 
-  mainWindow.webContents.on('new-window', (e, url) => {
-    e.preventDefault();
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     openExternalUrl(url);
+    return { action: 'deny' };
   });
 
   if (
@@ -437,12 +485,8 @@ if (argv['auth-negotiate-delegate-whitelist']) {
   );
 }
 
-// Disable Chromium's poor MPRIS implementation
-// and apply workaround for https://github.com/electron/electron/pull/26432
-app.commandLine.appendSwitch(
-  'disable-features',
-  'HardwareMediaKeyHandling,MediaSessionService,CrossOriginOpenerPolicy',
-);
+// Apply workaround for https://github.com/electron/electron/pull/26432
+app.commandLine.appendSwitch('disable-features', 'CrossOriginOpenerPolicy');
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -452,7 +496,6 @@ app.on('ready', () => {
   enforceMacOSAppLocation();
 
   // Register App URL
-  const protocolClient = isDevMode ? 'ferdium-dev' : 'ferdium';
   if (!app.isDefaultProtocolClient(protocolClient, process.execPath)) {
     app.setAsDefaultProtocolClient(protocolClient, process.execPath);
   }
@@ -485,8 +528,7 @@ app.on('ready', () => {
     ]);
   }
 
-  // eslint-disable-next-line global-require
-  require('electron-react-titlebar/main').initialize();
+  initialize();
 
   createWindow();
 });
@@ -508,6 +550,18 @@ app.on('login', (event, _webContents, _request, authInfo, callback) => {
   }
 });
 
+ipcMain.handle(
+  'translate',
+  async (_e, { text, translateToLanguage, translatorEngine }) => {
+    const response = await translateTo(
+      text,
+      translateToLanguage,
+      translatorEngine,
+    );
+    return response;
+  },
+);
+
 // TODO: evaluate if we need to store the authCallback for every service
 ipcMain.on('feature-basic-auth-credentials', (_e, { user, password }) => {
   debug('Received basic auth credentials', user, '********');
@@ -527,6 +581,7 @@ ipcMain.on('open-browser-window', (_e, { url, serviceId }) => {
     },
   });
   enableWebContents(child.webContents);
+  child.webContents.setWebRTCIPHandlingPolicy(webRTCIPHandlingPolicy);
   child.show();
   child.loadURL(url);
   debug('Received open-browser-window', url);
@@ -546,6 +601,7 @@ ipcMain.on(
           for (const key in headers) {
             if (Object.prototype.hasOwnProperty.call(headers, key)) {
               const value = headers[key];
+              // eslint-disable-next-line no-param-reassign
               details.requestHeaders[key] = value;
             }
           }
@@ -581,6 +637,11 @@ ipcMain.on('feature-basic-auth-cancel', () => {
   // @ts-expect-error Expected 0 arguments, but got 2.
   authCallback(null);
   authCallback = noop;
+});
+
+ipcMain.on('load-available-displays', (_e, data) => {
+  debug('MAIN PROCESS: Received load-desktop-capturer-sources');
+  mainWindow?.webContents.send(`select-capture-device:${data.serviceId}`, data);
 });
 
 // Handle synchronous messages from service webviews.
@@ -631,18 +692,33 @@ ipcMain.on('set-spellchecker-locales', (_e, { locale, serviceId }) => {
   serviceSession.setSpellCheckerLanguages(locales);
 });
 
-ipcMain.handle('get-desktop-capturer-sources', () => desktopCapturer.getSources({
-  types: ['screen', 'window'],
-}));
+ipcMain.handle('get-desktop-capturer-sources', () =>
+  desktopCapturer.getSources({
+    types: ['screen', 'window'],
+  }),
+);
 
 ipcMain.on('window.toolbar-double-clicked', () => {
-  mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow?.maximize();
+  if (mainWindow?.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow?.maximize();
+  }
+});
+
+ipcMain.on('stop-download', (_e, data) => {
+  debug(`stopping download from main process ${data}`);
+  mainWindow?.webContents.send('stop-download', data);
+});
+
+ipcMain.on('toggle-pause-download', (_e, data) => {
+  debug(`stopping download from main process ${data}`);
+  mainWindow?.webContents.send('toggle-pause-download', data);
 });
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
+  // On macos it is common for applications and their menu bar to stay active until the user quits explicitly with Cmd + Q
   if (
     retrieveSettingValue(
       'runInBackground',
@@ -685,8 +761,7 @@ app.on('before-quit', event => {
 });
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
+  // On macos it's common to re-create a window in the app when the dock icon is clicked and there are no other windows open.
   if (mainWindow === null) {
     createWindow();
   } else {
@@ -695,9 +770,9 @@ app.on('activate', () => {
 });
 
 app.on('web-contents-created', (_createdEvent, contents) => {
-  contents.on('new-window', (event, _url, _frameNme, disposition) => {
-    if (disposition === 'foreground-tab') event.preventDefault();
-  });
+  contents.setWindowOpenHandler(({ disposition }) =>
+    disposition === 'foreground-tab' ? { action: 'deny' } : { action: 'allow' },
+  );
 });
 
 app.on('will-finish-launching', () => {
@@ -710,4 +785,39 @@ app.on('will-finish-launching', () => {
       handleDeepLink(window, url);
     });
   });
+});
+
+app.on(
+  'certificate-error',
+  (event, _webContents, _url, _error, certificate, callback) => {
+    // On certificate error we disable default behaviour (stop loading the page)
+    // and we then say "it is all fine - true" to the callback
+    event.preventDefault();
+
+    const useSelfSignedCertificates =
+      retrieveSettingValue(
+        'useSelfSignedCertificates',
+        DEFAULT_APP_SETTINGS.useSelfSignedCertificates,
+      ) === true;
+
+    // Check if the certificate is trusted
+    if (!useSelfSignedCertificates) {
+      callback(false);
+      return;
+    }
+
+    callback(checkIfCertIsPresent(certificate.data));
+  },
+);
+
+ipcMain.on('relaunch-app', async (_, options) => {
+  // Ask user to confirm
+  const result = await dialog.showMessageBox(mainWindow!, options);
+
+  if (result.response === options.cancelId) {
+    return;
+  }
+
+  app.relaunch();
+  app.quit();
 });

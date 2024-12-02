@@ -1,19 +1,21 @@
-import { BrowserWindow, Tray } from 'electron';
-import autoUpdate from './autoUpdate';
-import settings from './settings';
-import sessionStorage from './sessionStorage';
+import type { BrowserWindow } from 'electron';
+import type TrayIcon from '../../lib/Tray';
 import appIndicator from './appIndicator';
-import download from './download';
-import processManager from './processManager';
-import localServer from './localServer';
-import languageDetect from './languageDetect';
+// eslint-disable-next-line import/no-cycle
+import autoUpdate from './autoUpdate';
 import dnd from './dnd';
+import download from './download';
 import focusState from './focusState';
+import languageDetect from './languageDetect';
+import localServer from './localServer';
+import processManager from './processManager';
+import sessionStorage from './sessionStorage';
+import settings from './settings';
 
 export default (params: {
   mainWindow: BrowserWindow;
   settings: any;
-  trayIcon: Tray;
+  trayIcon: TrayIcon;
 }) => {
   settings(params);
   sessionStorage();

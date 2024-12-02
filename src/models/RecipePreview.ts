@@ -1,9 +1,13 @@
-interface IRecipePreview {
+export interface IRecipePreview {
   id: string;
   name: string;
   icon: string;
   featured: boolean;
   aliases: string[];
+  isDevRecipe?: boolean;
+  icons?: {
+    svg: string;
+  };
 }
 
 export default class RecipePreview {
@@ -16,6 +20,12 @@ export default class RecipePreview {
   featured: boolean = false;
 
   aliases: string[] = [];
+
+  isDevRecipe?: boolean;
+
+  icons?: {
+    svg: string;
+  };
 
   constructor(data: IRecipePreview) {
     if (!data) {

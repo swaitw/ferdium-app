@@ -8,9 +8,9 @@ export default async () => {
     if (!isMac) {
       return false;
     }
-
-    // eslint-disable-next-line global-require
-    const { getDoNotDisturb } = require('macos-notification-state');
+    // eslint-disable-next-line @typescript-eslint/prefer-ts-expect-error
+    // @ts-ignore
+    const { getDoNotDisturb } = await import('macos-notification-state');
 
     if (!getDoNotDisturb) {
       debug("Could not load 'macos-notification-state' module");
@@ -18,7 +18,7 @@ export default async () => {
     }
 
     try {
-      const isDND = getDoNotDisturb();
+      const isDND = await getDoNotDisturb();
       debug('Fetching DND state, set to', isDND);
       return isDND;
     } catch (error) {

@@ -1,15 +1,9 @@
 import MdiIcon from '@mdi/react';
 import classnames from 'classnames';
-import { Component } from 'react';
-import injectStyle, { WithStylesProps } from 'react-jss';
+import { Component, type ReactElement } from 'react';
+import injectStyle, { type WithStylesProps } from 'react-jss';
 
-import { Theme } from '../../../themes';
-
-interface IProps extends WithStylesProps<typeof styles> {
-  icon: string;
-  size?: number;
-  className?: string;
-}
+import type { Theme } from '../../../themes';
 
 const styles = (theme: Theme) => ({
   icon: {
@@ -17,13 +11,15 @@ const styles = (theme: Theme) => ({
   },
 });
 
-class IconComponent extends Component<IProps> {
-  public static defaultProps = {
-    size: 1,
-  };
+interface IProps extends WithStylesProps<typeof styles> {
+  icon: string;
+  size?: number;
+  className?: string;
+}
 
-  render() {
-    const { classes, icon, size, className } = this.props;
+class IconComponent extends Component<IProps> {
+  render(): ReactElement {
+    const { classes, icon, size = 1, className } = this.props;
 
     if (!icon) {
       console.warn('No Icon specified');

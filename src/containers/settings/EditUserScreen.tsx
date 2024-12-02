@@ -1,14 +1,14 @@
-import { Component, ReactElement } from 'react';
 import { inject, observer } from 'mobx-react';
-import { defineMessages, injectIntl } from 'react-intl';
+import { Component, type ReactElement } from 'react';
+import { type IntlShape, defineMessages, injectIntl } from 'react-intl';
 
-import { StoresProps } from '../../@types/ferdium-components.types';
-import { FormFields } from '../../@types/mobx-form.types';
-import Form from '../../lib/Form';
+import type { StoresProps } from '../../@types/ferdium-components.types';
+import type { FormFields } from '../../@types/mobx-form.types';
 import EditUserForm from '../../components/settings/user/EditUserForm';
 import ErrorBoundary from '../../components/util/ErrorBoundary';
+import Form from '../../lib/Form';
 
-import { required, email, minLength } from '../../helpers/validation-helpers';
+import { email, minLength, required } from '../../helpers/validation-helpers';
 
 const messages = defineMessages({
   firstname: {
@@ -50,7 +50,7 @@ const messages = defineMessages({
 });
 
 interface EditUserScreenProps extends StoresProps {
-  intl: any;
+  intl: IntlShape;
 }
 
 class EditUserScreen extends Component<EditUserScreenProps> {
@@ -126,8 +126,6 @@ class EditUserScreen extends Component<EditUserScreenProps> {
       },
     };
 
-    // @ts-ignore: Remove this ignore once mobx-react-form v4 with typescript
-    // support has been released.
     return new Form(config);
   }
 

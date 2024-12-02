@@ -1,28 +1,27 @@
-import { Component, ReactElement } from 'react';
 import { inject, observer } from 'mobx-react';
-import { defineMessages, injectIntl } from 'react-intl';
-
-import { Params } from 'react-router-dom';
-import { StoresProps } from '../../@types/ferdium-components.types';
-import { IRecipe } from '../../models/Recipe';
-import Service from '../../models/Service';
-import { FormFields } from '../../@types/mobx-form.types';
-import Form from '../../lib/Form';
-
-import ServiceError from '../../components/settings/services/ServiceError';
+import { Component, type ReactElement } from 'react';
+import {
+  type WrappedComponentProps,
+  defineMessages,
+  injectIntl,
+} from 'react-intl';
+import type { Params } from 'react-router-dom';
+import type { StoresProps } from '../../@types/ferdium-components.types';
+import type { FormFields } from '../../@types/mobx-form.types';
 import EditServiceForm from '../../components/settings/services/EditServiceForm';
+import ServiceError from '../../components/settings/services/ServiceError';
 import ErrorBoundary from '../../components/util/ErrorBoundary';
-
-import { required, url, oneRequired } from '../../helpers/validation-helpers';
-import { getSelectOptions } from '../../helpers/i18n-helpers';
-
-import { config as proxyFeature } from '../../features/serviceProxy';
-
-import { SPELLCHECKER_LOCALES } from '../../i18n/languages';
-
-import globalMessages from '../../i18n/globalMessages';
-import { DEFAULT_APP_SETTINGS, DEFAULT_SERVICE_SETTINGS } from '../../config';
 import withParams from '../../components/util/WithParams';
+import { DEFAULT_APP_SETTINGS, DEFAULT_SERVICE_SETTINGS } from '../../config';
+import { config as proxyFeature } from '../../features/serviceProxy';
+import { getSelectOptions } from '../../helpers/i18n-helpers';
+import { url, oneRequired, required } from '../../helpers/validation-helpers';
+import globalMessages from '../../i18n/globalMessages';
+import { SPELLCHECKER_LOCALES } from '../../i18n/languages';
+import { ifUndefined } from '../../jsUtils';
+import Form from '../../lib/Form';
+import type { IRecipe } from '../../models/Recipe';
+import type Service from '../../models/Service';
 
 const messages = defineMessages({
   name: {
@@ -48,6 +47,10 @@ const messages = defineMessages({
   enableBadge: {
     id: 'settings.service.form.enableBadge',
     defaultMessage: 'Show unread message badges',
+  },
+  enableMediaBadge: {
+    id: 'settings.service.form.enableMediaBadge',
+    defaultMessage: 'Enable Media Play Indicator',
   },
   enableAudio: {
     id: 'settings.service.form.enableAudio',
@@ -93,6 +96,10 @@ const messages = defineMessages({
     id: 'settings.service.form.trapLinkClicks',
     defaultMessage: 'Open URLs within Ferdium',
   },
+  useFavicon: {
+    id: 'settings.service.form.useFavicon',
+    defaultMessage: 'Use service favicon instead of default or custom icon',
+  },
   onlyShowFavoritesInUnreadCount: {
     id: 'settings.service.form.onlyShowFavoritesInUnreadCount',
     defaultMessage: 'Only show Favorites in unread count',
@@ -119,23 +126,36 @@ const messages = defineMessages({
   },
 });
 
-interface EditServicesScreenProps extends StoresProps {
-  intl: any;
+interface IProxyConfig {
+  isEnabled?: boolean;
+  host?: string;
+  port?: number;
+  user?: string;
+  password?: string;
+}
+
+interface IProps extends StoresProps, WrappedComponentProps {
   params: Params;
 }
 
-class EditServiceScreen extends Component<EditServicesScreenProps> {
-  onSubmit(data: any) {
+@inject('stores', 'actions')
+@observer
+class EditServiceScreen extends Component<IProps> {
+  onSubmit(data: any): void {
     const { action } = this.props.params;
     const { recipes, services } = this.props.stores;
     const { createService, updateService } = this.props.actions.service;
+    // eslint-disable-next-line no-param-reassign
     data.darkReaderSettings = {
       brightness: data.darkReaderBrightness,
       contrast: data.darkReaderContrast,
       sepia: data.darkReaderSepia,
     };
+    // eslint-disable-next-line no-param-reassign
     delete data.darkReaderContrast;
+    // eslint-disable-next-line no-param-reassign
     delete data.darkReaderBrightness;
+    // eslint-disable-next-line no-param-reassign
     delete data.darkReaderSepia;
 
     const serviceData = data;
@@ -149,11 +169,7 @@ class EditServiceScreen extends Component<EditServicesScreenProps> {
   }
 
   prepareForm(recipe: IRecipe, service: Service | null, proxy: any): Form {
-    const { intl } = this.props;
-
-    const { stores } = this.props;
-
-    const { action } = stores.router.pathValue;
+    const { stores, intl } = this.props;
 
     let defaultSpellcheckerLanguage =
       SPELLCHECKER_LOCALES[stores.settings.app.spellcheckerLanguage];
@@ -171,9 +187,9 @@ class EditServiceScreen extends Component<EditServicesScreenProps> {
         { default: defaultSpellcheckerLanguage },
       ),
       automaticDetectionText:
-        stores.settings.app.spellcheckerLanguage !== 'automatic'
-          ? intl.formatMessage(globalMessages.spellcheckerAutomaticDetection)
-          : '',
+        stores.settings.app.spellcheckerLanguage === 'automatic'
+          ? ''
+          : intl.formatMessage(globalMessages.spellcheckerAutomaticDetection),
     });
 
     const config: FormFields = {
@@ -185,78 +201,128 @@ class EditServiceScreen extends Component<EditServicesScreenProps> {
         },
         isEnabled: {
           label: intl.formatMessage(messages.enableService),
-          value: service?.isEnabled,
+          value: ifUndefined<boolean>(
+            service?.isEnabled,
+            DEFAULT_SERVICE_SETTINGS.isEnabled,
+          ),
           default: DEFAULT_SERVICE_SETTINGS.isEnabled,
+          type: 'checkbox',
         },
         isHibernationEnabled: {
           label: intl.formatMessage(messages.enableHibernation),
-          value:
-            action !== 'edit'
-              ? recipe.autoHibernate
-              : service?.isHibernationEnabled,
+          value: ifUndefined<boolean>(
+            service?.isHibernationEnabled,
+            DEFAULT_SERVICE_SETTINGS.isHibernationEnabled,
+          ),
           default: DEFAULT_SERVICE_SETTINGS.isHibernationEnabled,
+          type: 'checkbox',
         },
         isWakeUpEnabled: {
           label: intl.formatMessage(messages.enableWakeUp),
-          value: service?.isWakeUpEnabled,
+          value: ifUndefined<boolean>(
+            service?.isWakeUpEnabled,
+            DEFAULT_SERVICE_SETTINGS.isWakeUpEnabled,
+          ),
           default: DEFAULT_SERVICE_SETTINGS.isWakeUpEnabled,
+          type: 'checkbox',
         },
         isNotificationEnabled: {
           label: intl.formatMessage(messages.enableNotification),
-          value: service?.isNotificationEnabled,
+          value: ifUndefined<boolean>(
+            service?.isNotificationEnabled,
+            DEFAULT_SERVICE_SETTINGS.isNotificationEnabled,
+          ),
           default: DEFAULT_SERVICE_SETTINGS.isNotificationEnabled,
+          type: 'checkbox',
         },
         isBadgeEnabled: {
           label: intl.formatMessage(messages.enableBadge),
-          value: service?.isBadgeEnabled,
+          value: ifUndefined<boolean>(
+            service?.isBadgeEnabled,
+            DEFAULT_SERVICE_SETTINGS.isBadgeEnabled,
+          ),
           default: DEFAULT_SERVICE_SETTINGS.isBadgeEnabled,
+          type: 'checkbox',
+        },
+        isMediaBadgeEnabled: {
+          label: intl.formatMessage(messages.enableMediaBadge),
+          value: ifUndefined<boolean>(
+            service?.isMediaBadgeEnabled,
+            DEFAULT_SERVICE_SETTINGS.isMediaBadgeEnabled,
+          ),
+          default: DEFAULT_SERVICE_SETTINGS.isMediaBadgeEnabled,
+          type: 'checkbox',
         },
         trapLinkClicks: {
           label: intl.formatMessage(messages.trapLinkClicks),
-          value: service?.trapLinkClicks,
+          value: ifUndefined<boolean>(
+            service?.trapLinkClicks,
+            DEFAULT_SERVICE_SETTINGS.trapLinkClicks,
+          ),
           default: DEFAULT_SERVICE_SETTINGS.trapLinkClicks,
+          type: 'checkbox',
+        },
+        useFavicon: {
+          label: intl.formatMessage(messages.useFavicon),
+          value: ifUndefined<boolean>(
+            service?.useFavicon,
+            DEFAULT_SERVICE_SETTINGS.useFavicon,
+          ),
+          default: DEFAULT_SERVICE_SETTINGS.useFavicon,
+          type: 'checkbox',
         },
         isMuted: {
           label: intl.formatMessage(messages.enableAudio),
-          value: !service?.isMuted,
+          value: !ifUndefined<boolean>(
+            service?.isMuted,
+            DEFAULT_SERVICE_SETTINGS.isMuted,
+          ),
           default: DEFAULT_SERVICE_SETTINGS.isMuted,
+          type: 'checkbox',
         },
         customIcon: {
           label: intl.formatMessage(messages.icon),
-          value: service?.hasCustomUploadedIcon ? service?.icon : false,
-          default: null,
+          value: service?.hasCustomUploadedIcon ? service.icon : null,
           type: 'file',
         },
         isDarkModeEnabled: {
           label: intl.formatMessage(messages.enableDarkMode),
-          value: service?.isDarkModeEnabled,
+          value: ifUndefined<boolean>(
+            service?.isDarkModeEnabled,
+            stores.settings.app.darkMode,
+          ),
           default: stores.settings.app.darkMode,
+          type: 'checkbox',
         },
         darkReaderBrightness: {
           label: intl.formatMessage(messages.darkReaderBrightness),
           value: service?.darkReaderSettings
-            ? service?.darkReaderSettings.brightness
-            : undefined,
-          default: 100,
+            ? service.darkReaderSettings.brightness
+            : DEFAULT_SERVICE_SETTINGS.darkReaderBrightness,
+          default: DEFAULT_SERVICE_SETTINGS.darkReaderBrightness,
         },
         darkReaderContrast: {
           label: intl.formatMessage(messages.darkReaderContrast),
           value: service?.darkReaderSettings
-            ? service?.darkReaderSettings.contrast
-            : undefined,
-          default: 90,
+            ? service.darkReaderSettings.contrast
+            : DEFAULT_SERVICE_SETTINGS.darkReaderContrast,
+          default: DEFAULT_SERVICE_SETTINGS.darkReaderContrast,
         },
         darkReaderSepia: {
           label: intl.formatMessage(messages.darkReaderSepia),
           value: service?.darkReaderSettings
-            ? service?.darkReaderSettings.sepia
-            : undefined,
-          default: 10,
+            ? service.darkReaderSettings.sepia
+            : DEFAULT_SERVICE_SETTINGS.darkReaderSepia,
+          default: DEFAULT_SERVICE_SETTINGS.darkReaderSepia,
         },
         isProgressbarEnabled: {
           label: intl.formatMessage(messages.enableProgressbar),
-          value: service?.isProgressbarEnabled,
+          value: ifUndefined<boolean>(
+            service?.isProgressbarEnabled,
+            DEFAULT_SERVICE_SETTINGS.isProgressbarEnabled,
+          ),
           default: DEFAULT_SERVICE_SETTINGS.isProgressbarEnabled,
+          type: 'checkbox',
         },
         spellcheckerLanguage: {
           label: intl.formatMessage(globalMessages.spellcheckerLanguage),
@@ -267,31 +333,31 @@ class EditServiceScreen extends Component<EditServicesScreenProps> {
         userAgentPref: {
           label: intl.formatMessage(globalMessages.userAgentPref),
           placeholder: service?.defaultUserAgent,
-          value: service?.userAgentPref || '',
+          value: ifUndefined<string>(
+            service?.userAgentPref,
+            DEFAULT_APP_SETTINGS.userAgentPref,
+          ),
+          default: DEFAULT_APP_SETTINGS.userAgentPref,
         },
       },
     };
 
     if (recipe.hasTeamId) {
-      Object.assign(config.fields, {
-        team: {
-          label: intl.formatMessage(messages.team),
-          placeholder: intl.formatMessage(messages.team),
-          value: service?.team,
-          validators: [required],
-        },
-      });
+      config.fields.team = {
+        label: intl.formatMessage(messages.team),
+        placeholder: intl.formatMessage(messages.team),
+        value: service?.team,
+        validators: [required],
+      };
     }
 
     if (recipe.hasCustomUrl) {
-      Object.assign(config.fields, {
-        customUrl: {
-          label: intl.formatMessage(messages.customUrl),
-          placeholder: "'http://' or 'https://' or 'file:///'",
-          value: service?.customUrl || recipe.serviceURL,
-          validators: [required, url],
-        },
-      });
+      config.fields.customUrl = {
+        label: intl.formatMessage(messages.customUrl),
+        placeholder: "'http://' or 'https://' or 'file:///'",
+        value: service?.customUrl || recipe.serviceURL,
+        validators: [required, url],
+      };
     }
 
     // More fine grained and use case specific validation rules
@@ -314,88 +380,122 @@ class EditServiceScreen extends Component<EditServicesScreenProps> {
     }
 
     if (recipe.hasIndirectMessages) {
-      Object.assign(config.fields, {
+      config.fields = {
+        ...config.fields,
         isIndirectMessageBadgeEnabled: {
           label: intl.formatMessage(messages.indirectMessages),
-          value: service?.isIndirectMessageBadgeEnabled,
+          value: ifUndefined<boolean>(
+            service?.isIndirectMessageBadgeEnabled,
+            DEFAULT_SERVICE_SETTINGS.hasIndirectMessages,
+          ),
           default: DEFAULT_SERVICE_SETTINGS.hasIndirectMessages,
+          type: 'checkbox',
         },
-      });
+      };
     }
 
     if (recipe.allowFavoritesDelineationInUnreadCount) {
-      Object.assign(config.fields, {
+      config.fields = {
+        ...config.fields,
         onlyShowFavoritesInUnreadCount: {
           label: intl.formatMessage(messages.onlyShowFavoritesInUnreadCount),
-          value: service?.onlyShowFavoritesInUnreadCount,
-          default: DEFAULT_APP_SETTINGS.onlyShowFavoritesInUnreadCount,
+          value: ifUndefined<boolean>(
+            service?.onlyShowFavoritesInUnreadCount,
+            DEFAULT_SERVICE_SETTINGS.onlyShowFavoritesInUnreadCount,
+          ),
+          default: DEFAULT_SERVICE_SETTINGS.onlyShowFavoritesInUnreadCount,
+          type: 'checkbox',
         },
-      });
+      };
     }
 
     if (proxy.isEnabled) {
-      let serviceProxyConfig: {
-        isEnabled?: boolean;
-        host?: string;
-        port?: number;
-        user?: string;
-        password?: string;
-      } = {};
-      if (service) {
-        serviceProxyConfig = stores.settings.proxy[service.id] || {};
-      }
+      const serviceProxyConfig: IProxyConfig = service
+        ? /*
+          TODO: [TS DEBT] find out why sometimes proxy[service.id] gives undefined
+          Note in proxy service id exist as key but value is undefined rather that proxy empty object
 
-      Object.assign(config.fields, {
+          Temp fix - or-ed {} (to stores.settings.proxy[service.id] ) to avoid undefined proxy in settingStore throw error
+          */
+          stores.settings.proxy[service.id] || {}
+        : {};
+
+      config.fields = {
+        ...config.fields,
         proxy: {
           name: 'proxy',
           label: 'proxy',
           fields: {
             isEnabled: {
               label: intl.formatMessage(messages.enableProxy),
-              value: serviceProxyConfig.isEnabled,
-              default: DEFAULT_APP_SETTINGS.proxyFeatureEnabled,
+              value: ifUndefined<boolean>(
+                serviceProxyConfig.isEnabled,
+                DEFAULT_SERVICE_SETTINGS.isProxyFeatureEnabled,
+              ),
+              default: DEFAULT_SERVICE_SETTINGS.isProxyFeatureEnabled,
+              type: 'checkbox',
             },
             host: {
               label: intl.formatMessage(messages.proxyHost),
-              value: serviceProxyConfig.host,
-              default: '',
+              value: ifUndefined<string>(
+                serviceProxyConfig.host,
+                DEFAULT_SERVICE_SETTINGS.proxyHost,
+              ),
+              default: DEFAULT_SERVICE_SETTINGS.proxyHost,
             },
             port: {
               label: intl.formatMessage(messages.proxyPort),
-              value: serviceProxyConfig.port,
-              default: '',
+              value: ifUndefined<number>(
+                serviceProxyConfig.port,
+                DEFAULT_SERVICE_SETTINGS.proxyPort,
+              ),
+              default: DEFAULT_SERVICE_SETTINGS.proxyPort,
             },
             user: {
               label: intl.formatMessage(messages.proxyUser),
-              value: serviceProxyConfig.user,
-              default: '',
+              value: ifUndefined<string>(
+                serviceProxyConfig.user,
+                DEFAULT_SERVICE_SETTINGS.proxyUser,
+              ),
+              default: DEFAULT_SERVICE_SETTINGS.proxyUser,
             },
             password: {
               label: intl.formatMessage(messages.proxyPassword),
-              value: serviceProxyConfig.password,
-              default: '',
+              value: ifUndefined<string>(
+                serviceProxyConfig.password,
+                DEFAULT_SERVICE_SETTINGS.proxyPassword,
+              ),
+              default: DEFAULT_SERVICE_SETTINGS.proxyPassword,
               type: 'password',
             },
           },
         },
-      });
+      };
     }
 
-    // @ts-ignore: Remove this ignore once mobx-react-form v4 with typescript
-    // support has been released.
     return new Form(config);
   }
 
   deleteService(): void {
-    const { deleteService } = this.props.actions.service;
     const { action } = this.props.params;
 
     if (action === 'edit') {
+      const { deleteService } = this.props.actions.service;
       const { activeSettings: service } = this.props.stores.services;
       deleteService({
         serviceId: service?.id,
         redirect: '/settings/services',
       });
+    }
+  }
+
+  clearCache(): void {
+    const { action } = this.props.params;
+
+    if (action === 'edit') {
+      const { clearCache } = this.props.actions.service;
+      const { activeSettings: service } = this.props.stores.services;
+      clearCache({ serviceId: service?.id });
     }
   }
 
@@ -413,11 +513,15 @@ class EditServiceScreen extends Component<EditServicesScreenProps> {
   }
 
   render(): ReactElement {
-    const { recipes, services, user } = this.props.stores;
+    const {
+      recipes,
+      services,
+      //  user
+    } = this.props.stores;
     const { action } = this.props.params;
 
-    let recipe: null | IRecipe = null;
-    let service: null | Service = null;
+    let recipe: IRecipe | null = null;
+    let service: Service | null = null;
     let isLoading = false;
 
     if (action === 'add') {
@@ -451,9 +555,9 @@ class EditServiceScreen extends Component<EditServicesScreenProps> {
           action={action}
           recipe={recipe}
           service={service}
-          user={user.data}
+          // user={user.data} // TODO: [TS DEBT] Need to check why its passed as its not used inside EditServiceForm
           form={form}
-          status={services.actionStatus}
+          // status={services.actionStatus} // TODO: [TS DEBT] Need to check why its passed as its not used inside EditServiceForm
           isSaving={
             services.updateServiceRequest.isExecuting ||
             services.createServiceRequest.isExecuting
@@ -461,6 +565,7 @@ class EditServiceScreen extends Component<EditServicesScreenProps> {
           isDeleting={services.deleteServiceRequest.isExecuting}
           onSubmit={d => this.onSubmit(d)}
           onDelete={() => this.deleteService()}
+          onClearCache={() => this.clearCache()}
           openRecipeFile={file => this.openRecipeFile(file)}
           isProxyFeatureEnabled={proxyFeature.isEnabled}
         />
@@ -469,8 +574,4 @@ class EditServiceScreen extends Component<EditServicesScreenProps> {
   }
 }
 
-export default withParams(
-  injectIntl<'intl', EditServicesScreenProps>(
-    inject('stores', 'actions')(observer(EditServiceScreen)),
-  ),
-);
+export default withParams(injectIntl(EditServiceScreen));

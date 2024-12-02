@@ -1,56 +1,59 @@
-import { Component, ReactElement } from 'react';
+import type { HashHistory } from 'history';
 import { inject, observer } from 'mobx-react';
-import { Route } from 'react-router';
+import { Component, type ReactElement } from 'react';
 import {
-  Navigate,
-  Routes,
   unstable_HistoryRouter as HistoryRouter,
+  Navigate,
+  Route,
+  Routes,
 } from 'react-router-dom';
-
-import AppLayoutContainer from './containers/layout/AppLayoutContainer';
-import SettingsWindow from './containers/settings/SettingsWindow';
-import RecipesScreen from './containers/settings/RecipesScreen';
-import ServicesScreen from './containers/settings/ServicesScreen';
-import EditServiceScreen from './containers/settings/EditServiceScreen';
-import AccountScreen from './containers/settings/AccountScreen';
-import TeamScreen from './containers/settings/TeamScreen';
-import EditUserScreen from './containers/settings/EditUserScreen';
-import EditSettingsScreen from './containers/settings/EditSettingsScreen';
-import InviteSettingsScreen from './containers/settings/InviteScreen';
-import SupportFerdiumScreen from './containers/settings/SupportScreen';
-import WelcomeScreen from './containers/auth/WelcomeScreen';
+import type { StoresProps } from './@types/ferdium-components.types';
+import type { Actions } from './actions/lib/actions';
+import AuthLayoutContainer from './containers/auth/AuthLayoutContainer';
+import AuthReleaseNotesScreen from './containers/auth/AuthReleaseNotesScreen';
+import ChangeServerScreen from './containers/auth/ChangeServerScreen';
+import InviteScreen from './containers/auth/InviteScreen';
 import LoginScreen from './containers/auth/LoginScreen';
 import PasswordScreen from './containers/auth/PasswordScreen';
-import ChangeServerScreen from './containers/auth/ChangeServerScreen';
+import SetupAssistantScreen from './containers/auth/SetupAssistantScreen';
 import SignupScreen from './containers/auth/SignupScreen';
-import ImportScreen from './containers/auth/ImportScreen';
-import SetupAssistentScreen from './containers/auth/SetupAssistantScreen';
-import InviteScreen from './containers/auth/InviteScreen';
-import AuthLayoutContainer from './containers/auth/AuthLayoutContainer';
-import WorkspacesScreen from './features/workspaces/containers/WorkspacesScreen';
-import EditWorkspaceScreen from './features/workspaces/containers/EditWorkspaceScreen';
+import WelcomeScreen from './containers/auth/WelcomeScreen';
+import DownloadManagerScreen from './containers/download-manager/DownloadManagerScreen';
+import DownloadManagerWindow from './containers/download-manager/DownloadManagerWindow';
+import AppLayoutContainer from './containers/layout/AppLayoutContainer';
+import AccountScreen from './containers/settings/AccountScreen';
+import EditServiceScreen from './containers/settings/EditServiceScreen';
+import EditSettingsScreen from './containers/settings/EditSettingsScreen';
+import EditUserScreen from './containers/settings/EditUserScreen';
+import InviteSettingsScreen from './containers/settings/InviteScreen';
+import RecipesScreen from './containers/settings/RecipesScreen';
+import ReleaseNotesScreen from './containers/settings/ReleaseNotesScreen';
+import ReleaseNotesWindow from './containers/settings/ReleaseNotesWindow';
+import ServicesScreen from './containers/settings/ServicesScreen';
+import SettingsWindow from './containers/settings/SettingsWindow';
+import SupportFerdiumScreen from './containers/settings/SupportScreen';
+import TeamScreen from './containers/settings/TeamScreen';
 import { WORKSPACES_ROUTES } from './features/workspaces/constants';
-import { Actions } from './actions/lib/actions';
-import { RealStores } from './stores';
+import EditWorkspaceScreen from './features/workspaces/containers/EditWorkspaceScreen';
+import WorkspacesScreen from './features/workspaces/containers/WorkspacesScreen';
+import type { RealStores } from './stores';
 
-type Props = {
-  stores: RealStores;
-  actions: Actions;
-  history: any;
-};
+interface IProps {
+  history: HashHistory;
+  actions?: Actions;
+  stores?: RealStores;
+}
 
-class FerdiumRoutes extends Component<Props> {
+@inject('stores', 'actions')
+@observer
+class FerdiumRoutes extends Component<IProps> {
   render(): ReactElement {
-    const { history } = this.props;
-    const routeProps = {
-      stores: this.props.stores,
-      actions: this.props.actions,
-    };
-    const errorProps = {
-      error: this.props.stores.globalError.error || {},
-    };
+    const { history, stores, actions } = this.props;
+    const routeProps: StoresProps = { stores: stores!, actions: actions! };
+    const errorProps = { error: routeProps.stores.globalError.error || {} };
 
     return (
+      // @ts-expect-error Fix me
       <HistoryRouter history={history}>
         <Routes>
           <Route path="/auth" element={<AuthLayoutContainer {...routeProps} />}>
@@ -80,12 +83,8 @@ class FerdiumRoutes extends Component<Props> {
                 element={<SignupScreen {...routeProps} {...errorProps} />}
               />
               <Route
-                path="/auth/signup/import"
-                element={<ImportScreen {...routeProps} />}
-              />
-              <Route
                 path="/auth/signup/setup"
-                element={<SetupAssistentScreen {...routeProps} />}
+                element={<SetupAssistantScreen {...routeProps} />}
               />
               <Route
                 path="/auth/signup/invite"
@@ -100,9 +99,34 @@ class FerdiumRoutes extends Component<Props> {
               path="/auth/logout"
               element={<LoginScreen {...routeProps} {...errorProps} />}
             />
+            <Route
+              path="/auth/releasenotes"
+              element={
+                <AuthReleaseNotesScreen {...routeProps} {...errorProps} />
+              }
+            />
           </Route>
 
           <Route path="/" element={<AppLayoutContainer {...routeProps} />}>
+            <Route
+              path="/releasenotes"
+              element={<ReleaseNotesWindow {...this.props} />}
+            >
+              <Route
+                path="/releasenotes"
+                // @ts-expect-error Fix me
+                element={<ReleaseNotesScreen {...this.props} />}
+              />
+            </Route>
+            <Route
+              path="/downloadmanager"
+              element={<DownloadManagerWindow {...this.props} />}
+            >
+              <Route
+                path="/downloadmanager"
+                element={<DownloadManagerScreen {...this.props} />}
+              />
+            </Route>
             <Route
               path="/settings"
               element={<SettingsWindow {...this.props} />}
@@ -117,6 +141,7 @@ class FerdiumRoutes extends Component<Props> {
               />
               <Route
                 path="/settings/services"
+                // @ts-expect-error Fix me
                 element={<ServicesScreen {...this.props} />}
               />
               <Route
@@ -125,35 +150,48 @@ class FerdiumRoutes extends Component<Props> {
               />
               <Route
                 path={WORKSPACES_ROUTES.ROOT}
+                // @ts-expect-error Fix me
                 element={<WorkspacesScreen {...this.props} />}
               />
               <Route
                 path={WORKSPACES_ROUTES.EDIT}
+                // @ts-expect-error Fix me
                 element={<EditWorkspaceScreen {...this.props} />}
               />
               <Route
                 path="/settings/user"
+                // @ts-expect-error Fix me
                 element={<AccountScreen {...this.props} />}
               />
               <Route
                 path="/settings/user/edit"
+                // @ts-expect-error Fix me
                 element={<EditUserScreen {...this.props} />}
               />
               <Route
                 path="/settings/team"
+                // @ts-expect-error Fix me
                 element={<TeamScreen {...this.props} />}
               />
               <Route
                 path="/settings/app"
+                // @ts-expect-error Fix me
                 element={<EditSettingsScreen {...this.props} />}
               />
               <Route
                 path="/settings/invite"
+                // @ts-expect-error Fix me
                 element={<InviteSettingsScreen {...this.props} />}
               />
               <Route
                 path="/settings/support"
+                // @ts-expect-error Fix me
                 element={<SupportFerdiumScreen {...this.props} />}
+              />
+              <Route
+                path="/settings/releasenotes"
+                // @ts-expect-error Fix me
+                element={<ReleaseNotesScreen {...this.props} />}
               />
             </Route>
           </Route>
@@ -163,4 +201,4 @@ class FerdiumRoutes extends Component<Props> {
   }
 }
 
-export default inject('stores', 'actions')(observer(FerdiumRoutes));
+export default FerdiumRoutes;

@@ -1,35 +1,42 @@
 /* eslint-disable import/no-import-module-exports */
 /* eslint-disable global-require */
-import { join } from 'path';
-import tar from 'tar';
+import { join } from 'node:path';
 import {
-  readdirSync,
-  statSync,
-  writeFileSync,
+  type PathOrFileDescriptor,
   copySync,
   ensureDirSync,
   pathExistsSync,
   readJsonSync,
+  readdirSync,
   removeSync,
-  PathOrFileDescriptor,
+  statSync,
+  writeFileSync,
 } from 'fs-extra';
+import ms from 'ms';
+import tar from 'tar';
 
+import RecipeModel, { type IRecipe } from '../../models/Recipe';
+import RecipePreviewModel, {
+  type IRecipePreview,
+} from '../../models/RecipePreview';
 import ServiceModel from '../../models/Service';
-import RecipePreviewModel from '../../models/RecipePreview';
-import RecipeModel from '../../models/Recipe';
 import UserModel from '../../models/User';
 
 import sleep from '../../helpers/async-helpers';
 
 import { SERVER_NOT_LOADED } from '../../config';
-import { userDataRecipesPath, userDataPath } from '../../environment-remote';
+import { userDataRecipesPath } from '../../environment-remote';
 import { asarRecipesPath } from '../../helpers/asar-helpers';
 import apiBase from '../apiBase';
-import { prepareAuthRequest, prepareLocalToken, sendAuthRequest } from '../utils/auth';
+import {
+  prepareAuthRequest,
+  prepareLocalToken,
+  sendAuthRequest,
+} from '../utils/auth';
 
 import {
-  getRecipeDirectory,
   getDevRecipeDirectory,
+  getRecipeDirectory,
   loadRecipeConfig,
 } from '../../helpers/recipe-helpers';
 
@@ -40,9 +47,9 @@ const debug = require('../../preload-safe-debug')('Ferdium:ServerApi');
 module.paths.unshift(getDevRecipeDirectory(), getRecipeDirectory());
 
 export default class ServerApi {
-  recipePreviews: any[] = [];
+  recipePreviews: IRecipePreview[] = [];
 
-  recipes: any[] = [];
+  recipes: IRecipe[] = [];
 
   // User
   async login(email: string, passwordHash: string) {
@@ -51,18 +58,26 @@ export default class ServerApi {
       {
         method: 'POST',
         headers: {
-          Authorization: `Basic ${window.btoa(`${email}:${passwordHash}`)}`,
+          Authorization: `Basic ${Buffer.from(
+            `${email}:${passwordHash}`,
+          ).toString('base64')}`,
         },
       },
       false,
     );
-    if (!request.ok) {
-      throw new Error(request.statusText);
-    }
-    const u = await request.json();
+    try {
+      const responseJson = await request.json();
 
-    debug('ServerApi::login resolves', u);
-    return u.token;
+      if (!request.ok) {
+        throw responseJson;
+      }
+
+      debug('ServerApi::login resolves', responseJson);
+      return responseJson.token;
+    } catch (error) {
+      debug('ServerApi::login ERROR:', error);
+      throw error;
+    }
   }
 
   async signup(data: any) {
@@ -74,13 +89,19 @@ export default class ServerApi {
       },
       false,
     );
-    if (!request.ok) {
-      throw new Error(request.statusText);
-    }
-    const u = await request.json();
+    try {
+      const responseJson = await request.json();
 
-    debug('ServerApi::signup resolves', u);
-    return u.token;
+      if (!request.ok) {
+        throw responseJson;
+      }
+
+      debug('ServerApi::signup resolves', responseJson);
+      return responseJson.token;
+    } catch (error) {
+      debug('ServerApi::signup ERROR:', error);
+      throw error;
+    }
   }
 
   async inviteUser(data: any) {
@@ -131,6 +152,22 @@ export default class ServerApi {
     debug('ServerApi::userInfo resolves', user);
 
     return user;
+  }
+
+  async requestNewToken() {
+    if (apiBase() === SERVER_NOT_LOADED) {
+      throw new Error('Server not loaded');
+    }
+
+    const request = await sendAuthRequest(`${apiBase()}/me/newtoken`);
+    if (!request.ok) {
+      throw new Error(request.statusText);
+    }
+    const data = await request.json();
+
+    debug('ServerApi::requestNewToken new authToken received');
+
+    return data;
   }
 
   async updateUserInfo(data: any) {
@@ -342,6 +379,7 @@ export default class ServerApi {
       })
       .filter(recipe => recipe.id);
 
+    // @ts-expect-error Type 'boolean' is not assignable to type 'ConcatArray<IRecipe>'.
     // eslint-disable-next-line unicorn/prefer-spread
     this.recipes = this.recipes.concat(this._getDevRecipes());
 
@@ -423,9 +461,8 @@ export default class ServerApi {
     }
     debug(archivePath);
 
-    await sleep(10);
+    await sleep(ms('10ms'));
 
-    // @ts-expect-error No overload matches this call.
     await tar.x({
       file: archivePath,
       cwd: recipeTempDirectory,
@@ -435,13 +472,20 @@ export default class ServerApi {
       onwarn: x => debug('warn', recipeId, x),
     });
 
-    await sleep(10);
+    await sleep(ms('10ms'));
 
-    const { id } = readJsonSync(join(recipeTempDirectory, 'package.json'));
+    const { id, defaultIcon } = readJsonSync(
+      join(recipeTempDirectory, 'package.json'),
+    );
     const recipeDirectory = join(recipesDirectory, id);
     copySync(recipeTempDirectory, recipeDirectory);
     removeSync(recipeTempDirectory);
     removeSync(join(recipesDirectory, recipeId, 'recipe.tar.gz'));
+
+    // TODO: This is a temporary fix to remove svg icons from the user AppData. This should be removed after versions of all recipes have been bumped up
+    if (defaultIcon) {
+      removeSync(join(recipeDirectory, 'icon.svg'));
+    }
 
     return id;
   }
@@ -465,55 +509,19 @@ export default class ServerApi {
     debug('ServerApi::healthCheck resolves');
   }
 
-  async getLegacyServices() {
-    const file = userDataPath('settings', 'services.json');
-
-    try {
-      const config = readJsonSync(file);
-
-      if (Object.prototype.hasOwnProperty.call(config, 'services')) {
-        const services = await Promise.all(
-          config.services.map(async (s: { service: any }) => {
-            const service = s;
-            const request = await sendAuthRequest(
-              `${apiBase()}/recipes/${s.service}`,
-            );
-
-            if (request.status === 200) {
-              const data = await request.json();
-              // @ts-expect-error Property 'recipe' does not exist on type '{ service: any; }'.
-              service.recipe = new RecipePreviewModel(data);
-            }
-
-            return service;
-          }),
-        );
-
-        debug('ServerApi::getLegacyServices resolves', services);
-        return services;
-      }
-    } catch {
-      console.error('ServerApi::getLegacyServices no config found');
-    }
-
-    return [];
-  }
-
   // Helper
   async _mapServiceModels(services: any[]) {
     const recipes = services.map((s: { recipeId: string }) => s.recipeId);
     await this._bulkRecipeCheck(recipes);
-    /* eslint-disable no-return-await */
+
     return Promise.all(
       services.map(async (service: any) => this._prepareServiceModel(service)),
     );
-    /* eslint-enable no-return-await */
   }
 
   async _prepareServiceModel(service: { recipeId: string }) {
-    let recipe: undefined;
     try {
-      recipe = this.recipes.find(r => r.id === service.recipeId);
+      const recipe = this.recipes.find(r => r.id === service.recipeId);
 
       if (!recipe) {
         console.warn(`Recipe ${service.recipeId} not loaded`);
@@ -527,11 +535,10 @@ export default class ServerApi {
     }
   }
 
-  async _bulkRecipeCheck(unfilteredRecipes: any[]) {
+  async _bulkRecipeCheck(unfilteredRecipes: string[]) {
     // Filter recipe duplicates as we don't need to download 3 Slack recipes
     const recipes = unfilteredRecipes.filter(
-      (elem: any, pos: number, arr: string | any[]) =>
-        arr.indexOf(elem) === pos,
+      (elem: string, pos: number, arr: string[]) => arr.indexOf(elem) === pos,
     );
 
     return Promise.all(
@@ -561,7 +568,7 @@ export default class ServerApi {
     ).catch(error => console.error("Can't load recipe", error));
   }
 
-  _mapRecipePreviewModel(recipes: any[]) {
+  _mapRecipePreviewModel(recipes: IRecipePreview[]) {
     return recipes
       .map(recipe => {
         try {
@@ -571,7 +578,7 @@ export default class ServerApi {
           return null;
         }
       })
-      .filter(recipe => recipe !== null);
+      .filter(Boolean);
   }
 
   _getDevRecipes() {
@@ -583,17 +590,16 @@ export default class ServerApi {
           file !== 'temp',
       );
 
-      const recipes = paths
+      const recipes: IRecipe[] = paths
         .map(id => {
-          let Recipe;
           try {
             // eslint-disable-next-line import/no-dynamic-require
-            Recipe = require(id)(RecipeModel);
+            const Recipe = require(id)(RecipeModel);
+
             return new Recipe(loadRecipeConfig(id));
           } catch (error) {
             console.error(error);
           }
-
           return false;
         })
         .filter(recipe => recipe.id)

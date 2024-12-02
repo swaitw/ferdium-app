@@ -1,10 +1,10 @@
-import { action, observable, computed, reaction, makeObservable } from 'mobx';
 import { nativeTheme } from '@electron/remote';
+import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
-import { Stores } from '../@types/stores.types';
-import { ApiInterface } from '../api';
-import { Actions } from '../actions/lib/actions';
-import { Theme, theme, ThemeType } from '../themes';
+import type { Stores } from '../@types/stores.types';
+import type { Actions } from '../actions/lib/actions';
+import type { ApiInterface } from '../api';
+import { type Theme, ThemeType, theme } from '../themes';
 import TypedStore from './lib/TypedStore';
 
 export default class UIStore extends TypedStore {
@@ -18,6 +18,7 @@ export default class UIStore extends TypedStore {
     makeObservable(this);
 
     // Register action handlers
+    this.actions.ui.openDownloads.listen(this._openDownloads.bind(this));
     this.actions.ui.openSettings.listen(this._openSettings.bind(this));
     this.actions.ui.closeSettings.listen(this._closeSettings.bind(this));
     this.actions.ui.toggleServiceUpdatedInfoBar.listen(
@@ -97,8 +98,14 @@ export default class UIStore extends TypedStore {
   }
 
   // Actions
+  @action _openDownloads({ path = '/downloadmanager' }): void {
+    const downloadsPath =
+      path === '/downloadmanager' ? path : `/downloadmanager/${path}`;
+    this.stores.router.push(downloadsPath);
+  }
+
   @action _openSettings({ path = '/settings' }): void {
-    const settingsPath = path !== '/settings' ? `/settings/${path}` : path;
+    const settingsPath = path === '/settings' ? path : `/settings/${path}`;
     this.stores.router.push(settingsPath);
   }
 
@@ -116,19 +123,19 @@ export default class UIStore extends TypedStore {
 
   // Reactions
   _setupThemeInDOM(): void {
-    if (!this.isDarkThemeActive) {
-      document.body.classList.remove('theme__dark');
-    } else {
+    if (this.isDarkThemeActive) {
       document.body.classList.add('theme__dark');
+    } else {
+      document.body.classList.remove('theme__dark');
     }
   }
 
   _setupModeInDOM(): void {
-    if (!this.isSplitModeActive) {
-      document.body.classList.remove('mode__split');
-    } else {
+    if (this.isSplitModeActive) {
       document.body.classList.add('mode__split');
       document.body.dataset.columns = this.splitColumnsNo.toString();
+    } else {
+      document.body.classList.remove('mode__split');
     }
   }
 

@@ -1,6 +1,6 @@
 const Env = use('Env');
 
-const path = require('path');
+const path = require('node:path');
 const fs = require('fs-extra');
 const sanitize = require('sanitize-filename');
 
@@ -19,7 +19,9 @@ class ImageController {
 
     try {
       await fs.access(iconPath);
-    } catch {
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.log(error);
       // File not available.
       return response.status(404).send({
         status: "Icon doesn't exist",

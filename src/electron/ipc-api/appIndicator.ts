@@ -1,14 +1,15 @@
-import { app, ipcMain, BrowserWindow, Tray } from 'electron';
-import { join } from 'path';
+import { join } from 'node:path';
+import { type BrowserWindow, app, ipcMain } from 'electron';
 import { autorun } from 'mobx';
-import { isMac, isWindows, isLinux } from '../../environment';
+import { isLinux, isMac, isWindows } from '../../environment';
+import type TrayIcon from '../../lib/Tray';
 
 const INDICATOR_TASKBAR = 'taskbar';
 const FILE_EXTENSION = isWindows ? 'ico' : 'png';
 
 let isTrayIconEnabled: boolean;
 
-function getAsset(type: 'tray' | 'taskbar', asset: string) {
+const getAsset = (type: 'tray' | 'taskbar', asset: string) => {
   return join(
     __dirname,
     '..',
@@ -19,21 +20,19 @@ function getAsset(type: 'tray' | 'taskbar', asset: string) {
     process.platform,
     `${asset}.${FILE_EXTENSION}`,
   );
-}
+};
 
 export default (params: {
   mainWindow: BrowserWindow;
   settings: any;
-  trayIcon: Tray;
+  trayIcon: TrayIcon;
 }) => {
   autorun(() => {
     isTrayIconEnabled = params.settings.app.get('enableSystemTray');
 
     if (!isTrayIconEnabled) {
-      // @ts-expect-error Property 'hide' does not exist on type 'Tray'.
       params.trayIcon.hide();
     } else if (isTrayIconEnabled) {
-      // @ts-expect-error Property 'show' does not exist on type 'Tray'.
       params.trayIcon.show();
     }
   });
@@ -87,7 +86,6 @@ export default (params: {
     }
 
     // Update Tray
-    // @ts-expect-error Property 'setIndicator' does not exist on type 'Tray'.
     params.trayIcon.setIndicator(args.indicator);
   });
 };

@@ -1,8 +1,22 @@
 import PropTypes from 'prop-types';
-import Workspace from './models/Workspace';
 import { createActionsFromDefinitions } from '../../actions/lib/actions';
+import Workspace from './models/Workspace';
 
-export default createActionsFromDefinitions(
+type WorkspaceArg = { workspace: Workspace };
+
+interface WorkspaceActions {
+  openWorkspaceSettings: () => void;
+  toggleWorkspaceDrawer: () => void;
+  deactivate: () => void;
+  activate: (options: any) => void;
+  edit: (workspaceArg: WorkspaceArg) => void;
+  create: ({ name }: { name: string }) => void;
+  delete: (workspaceArg: WorkspaceArg) => void;
+  update: (workspaceArg: WorkspaceArg) => void;
+  toggleKeepAllWorkspacesLoadedSetting: () => void;
+}
+
+export default createActionsFromDefinitions<WorkspaceActions>(
   {
     edit: {
       workspace: PropTypes.instanceOf(Workspace).isRequired,
@@ -24,5 +38,5 @@ export default createActionsFromDefinitions(
     openWorkspaceSettings: {},
     toggleKeepAllWorkspacesLoadedSetting: {},
   },
-  PropTypes.checkPropTypes
+  PropTypes.checkPropTypes,
 );
