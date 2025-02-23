@@ -1,28 +1,22 @@
-
-import { ipcRenderer } from 'electron';
 import { getCurrentWindow } from '@electron/remote';
+import { ipcRenderer } from 'electron';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import localStorage from 'mobx-localstorage';
-import { Stores } from '../@types/stores.types';
-import { ApiInterface } from '../api';
-import { Actions } from '../actions/lib/actions';
+import type { Stores } from '../@types/stores.types';
+import type { Actions } from '../actions/lib/actions';
+import type { ApiInterface } from '../api';
 import {
   DEFAULT_APP_SETTINGS,
+  DEFAULT_SHORTCUTS,
   FILE_SYSTEM_SETTINGS_TYPES,
   LOCAL_SERVER,
 } from '../config';
 import { hash } from '../helpers/password-helpers';
-import Request from './lib/Request';
 import TypedStore from './lib/TypedStore';
 
 const debug = require('../preload-safe-debug')('Ferdium:SettingsStore');
 
 export default class SettingsStore extends TypedStore {
-  @observable updateAppSettingsRequest = new Request(
-    this.api.local,
-    'updateAppSettings',
-  );
-
   @observable loaded: boolean = false;
 
   fileSystemSettingsTypes = FILE_SYSTEM_SETTINGS_TYPES;
@@ -30,6 +24,7 @@ export default class SettingsStore extends TypedStore {
   @observable _fileSystemSettingsCache = {
     app: DEFAULT_APP_SETTINGS,
     proxy: {},
+    shortcuts: DEFAULT_SHORTCUTS,
   };
 
   constructor(stores: Stores, api: ApiInterface, actions: Actions) {
@@ -68,17 +63,20 @@ export default class SettingsStore extends TypedStore {
     let inactivityTimer;
     getCurrentWindow().on('blur', () => {
       if (
-        this.all.app.lockingFeatureEnabled &&
+        this.all.app.isLockingFeatureEnabled &&
         this.all.app.inactivityLock !== 0
       ) {
-        inactivityTimer = setTimeout(() => {
-          this.actions.settings.update({
-            type: 'app',
-            data: {
-              locked: true,
-            },
-          });
-        }, this.all.app.inactivityLock * 1000 * 60);
+        inactivityTimer = setTimeout(
+          () => {
+            this.actions.settings.update({
+              type: 'app',
+              data: {
+                locked: true,
+              },
+            });
+          },
+          this.all.app.inactivityLock * 1000 * 60,
+        );
       }
     });
     getCurrentWindow().on('focus', () => {
@@ -92,7 +90,7 @@ export default class SettingsStore extends TypedStore {
       if (
         !this.loaded &&
         resp.type === 'app' &&
-        resp.data.lockingFeatureEnabled
+        resp.data.isLockingFeatureEnabled
       ) {
         process.nextTick(() => {
           if (!this.all.app.locked) {
@@ -101,8 +99,11 @@ export default class SettingsStore extends TypedStore {
         });
       }
       debug('Get appSettings resolves', resp.type, resp.data);
-      Object.assign(this._fileSystemSettingsCache[resp.type], resp.data);
-      this.loaded = true;
+      this.actions.settings.update({
+        type: resp.type,
+        data: resp.data,
+      });
+      this.setLoaded();
       ipcRenderer.send('initialAppSettings', resp);
     });
 
@@ -127,6 +128,10 @@ export default class SettingsStore extends TypedStore {
     );
   }
 
+  @computed get shortcuts() {
+    return this._fileSystemSettingsCache.shortcuts || DEFAULT_SHORTCUTS;
+  }
+
   @computed get stats() {
     return (
       localStorage.getItem('stats') || {
@@ -146,15 +151,17 @@ export default class SettingsStore extends TypedStore {
       service: this.service,
       stats: this.stats,
       migration: this.migration,
+      shortcuts: this.shortcuts,
     };
+  }
+
+  @action async setLoaded(): Promise<void> {
+    this.loaded = true;
   }
 
   @action async _update({ type, data }): Promise<void> {
     const appSettings = this.all;
-    if (!this.fileSystemSettingsTypes.includes(type)) {
-      debug('Update settings', type, data, this.all);
-      localStorage.setItem(type, Object.assign(appSettings[type], data));
-    } else {
+    if (this.fileSystemSettingsTypes.includes(type)) {
       debug('Update settings on file system', type, data);
       ipcRenderer.send('updateAppSettings', {
         type,
@@ -162,6 +169,9 @@ export default class SettingsStore extends TypedStore {
       });
 
       Object.assign(this._fileSystemSettingsCache[type], data);
+    } else {
+      debug('Update settings', type, data, this.all);
+      localStorage.setItem(type, Object.assign(appSettings[type], data));
     }
   }
 
@@ -170,6 +180,7 @@ export default class SettingsStore extends TypedStore {
 
     const appSettings = this.all[type];
     if (Object.hasOwnProperty.call(appSettings, key)) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete appSettings[key];
 
       this.actions.settings.update({
@@ -179,7 +190,10 @@ export default class SettingsStore extends TypedStore {
     }
   }
 
-  _ensureMigrationAndMarkDone(migrationName: string, callback: Function): void {
+  _ensureMigrationAndMarkDone(
+    migrationName: string,
+    callback: () => void,
+  ): void {
     if (!this.all.migration[migrationName]) {
       callback();
 

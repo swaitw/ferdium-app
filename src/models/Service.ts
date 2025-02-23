@@ -1,19 +1,25 @@
-import { autorun, computed, makeObservable, observable } from 'mobx';
-import { ipcRenderer } from 'electron';
+import { basename, join } from 'node:path';
 import { webContents } from '@electron/remote';
-import normalizeUrl from 'normalize-url';
-import { join } from 'path';
-import ElectronWebView from 'react-electron-web-view';
+import { ipcRenderer } from 'electron';
+import { action, autorun, computed, makeObservable, observable } from 'mobx';
+import type ElectronWebView from 'react-electron-web-view';
 
-import { todosStore } from '../features/todos';
-import { isValidExternalURL } from '../helpers/url-helpers';
-import UserAgent from './UserAgent';
-import { DEFAULT_SERVICE_ORDER } from '../config';
-import { ifUndefined } from '../jsUtils';
-import { IRecipe } from './Recipe';
+import { v4 as uuidV4 } from 'uuid';
 import { needsToken } from '../api/apiBase';
+import { DEFAULT_SERVICE_ORDER, DEFAULT_SERVICE_SETTINGS } from '../config';
+import { isMac } from '../environment';
+import { todosStore } from '../features/todos';
+import { getFaviconUrl } from '../helpers/favicon-helpers';
+import { isValidExternalURL, normalizedUrl } from '../helpers/url-helpers';
+import { ifUndefined } from '../jsUtils';
+import type { IRecipe } from './Recipe';
+import UserAgent from './UserAgent';
 
 const debug = require('../preload-safe-debug')('Ferdium:Service');
+
+// Global registry for active partitions
+// This is needed to prevent events of the same partition from being registered multiple times (when using custom sandboxes)
+const activePartitions = new Set<string>();
 
 interface DarkReaderInterface {
   brightness: number;
@@ -47,19 +53,23 @@ export default class Service {
 
   @observable order: number = DEFAULT_SERVICE_ORDER;
 
-  @observable isEnabled: boolean = true;
+  @observable isEnabled: boolean = DEFAULT_SERVICE_SETTINGS.isEnabled;
 
-  @observable isMuted: boolean = false;
+  @observable isMuted: boolean = DEFAULT_SERVICE_SETTINGS.isMuted;
 
   @observable team: string = '';
 
   @observable customUrl: string = '';
 
-  @observable isNotificationEnabled: boolean = true;
+  @observable isNotificationEnabled: boolean =
+    DEFAULT_SERVICE_SETTINGS.isNotificationEnabled;
 
-  @observable isBadgeEnabled: boolean = true;
+  @observable isBadgeEnabled: boolean = DEFAULT_SERVICE_SETTINGS.isBadgeEnabled;
 
-  @observable trapLinkClicks: boolean = false;
+  @observable isMediaBadgeEnabled: boolean =
+    DEFAULT_SERVICE_SETTINGS.isMediaBadgeEnabled;
+
+  @observable trapLinkClicks: boolean = DEFAULT_SERVICE_SETTINGS.trapLinkClicks;
 
   @observable isIndirectMessageBadgeEnabled: boolean = true;
 
@@ -71,9 +81,11 @@ export default class Service {
 
   @observable hasCrashed: boolean = false;
 
-  @observable isDarkModeEnabled: boolean = false;
+  @observable isDarkModeEnabled: boolean =
+    DEFAULT_SERVICE_SETTINGS.isDarkModeEnabled;
 
-  @observable isProgressbarEnabled: boolean = true;
+  @observable isProgressbarEnabled: boolean =
+    DEFAULT_SERVICE_SETTINGS.isProgressbarEnabled;
 
   @observable darkReaderSettings: DarkReaderInterface = {
     brightness: 100,
@@ -97,12 +109,14 @@ export default class Service {
 
   @observable isServiceAccessRestricted: boolean = false;
 
-  // todo is this used?
+  // TODO: is this used?
   @observable restrictionType = null;
 
-  @observable isHibernationEnabled: boolean = false;
+  @observable isHibernationEnabled: boolean =
+    DEFAULT_SERVICE_SETTINGS.isHibernationEnabled;
 
-  @observable isWakeUpEnabled: boolean = true;
+  @observable isWakeUpEnabled: boolean =
+    DEFAULT_SERVICE_SETTINGS.isWakeUpEnabled;
 
   @observable isHibernationRequested: boolean = false;
 
@@ -124,6 +138,23 @@ export default class Service {
 
   @observable proxy: string | null = null;
 
+  @observable isMediaPlaying: boolean = false;
+
+  @observable useFavicon: boolean = DEFAULT_SERVICE_SETTINGS.useFavicon;
+
+  @action _setAutoRun() {
+    if (!this.isEnabled) {
+      this.webview = null;
+      this.isAttached = false;
+      this.unreadDirectMessageCount = 0;
+      this.unreadIndirectMessageCount = 0;
+    }
+
+    if (this.recipe.hasCustomUrl && this.customUrl) {
+      this.isUsingCustomUrl = true;
+    }
+  }
+
   constructor(data, recipe: IRecipe) {
     if (!data) {
       throw new Error('Service config not valid');
@@ -144,6 +175,7 @@ export default class Service {
     this.team = ifUndefined<string>(data.team, this.team);
     this.customUrl = ifUndefined<string>(data.customUrl, this.customUrl);
     this.iconUrl = ifUndefined<string>(data.iconUrl, this.iconUrl);
+    this.useFavicon = ifUndefined<boolean>(data.useFavicon, this.useFavicon);
     this.order = ifUndefined<number>(data.order, this.order);
     this.isEnabled = ifUndefined<boolean>(data.isEnabled, this.isEnabled);
     this.isNotificationEnabled = ifUndefined<boolean>(
@@ -153,6 +185,11 @@ export default class Service {
     this.isBadgeEnabled = ifUndefined<boolean>(
       data.isBadgeEnabled,
       this.isBadgeEnabled,
+    );
+
+    this.isMediaBadgeEnabled = ifUndefined<boolean>(
+      data.isMediaBadgeEnabled,
+      this.isMediaBadgeEnabled,
     );
     this.trapLinkClicks = ifUndefined<boolean>(
       data.trapLinkClicks,
@@ -212,17 +249,48 @@ export default class Service {
     }
 
     autorun((): void => {
-      if (!this.isEnabled) {
-        this.webview = null;
-        this.isAttached = false;
-        this.unreadDirectMessageCount = 0;
-        this.unreadIndirectMessageCount = 0;
-      }
-
-      if (this.recipe.hasCustomUrl && this.customUrl) {
-        this.isUsingCustomUrl = true;
-      }
+      this._setAutoRun();
     });
+  }
+
+  @action _didStartLoading(): void {
+    this.hasCrashed = false;
+    this.isLoading = true;
+    this.isLoadingPage = true;
+    this.isError = false;
+  }
+
+  @action _didStopLoading(): void {
+    this.isLoading = false;
+    this.isLoadingPage = false;
+  }
+
+  @action _didLoad(): void {
+    this.isLoading = false;
+    this.isLoadingPage = false;
+
+    if (!this.isError) {
+      this.isFirstLoad = false;
+    }
+  }
+
+  @action _didFailLoad(event: { errorDescription: string }): void {
+    this.isError = false;
+    this.errorMessage = event.errorDescription;
+    this.isLoading = false;
+    this.isLoadingPage = false;
+  }
+
+  @action _hasCrashed(): void {
+    this.hasCrashed = true;
+  }
+
+  @action _didMediaPlaying(): void {
+    this.isMediaPlaying = true;
+  }
+
+  @action _didMediaPaused(): void {
+    this.isMediaPlaying = false;
   }
 
   @computed get shareWithWebview(): object {
@@ -245,7 +313,7 @@ export default class Service {
   }
 
   @computed get canHibernate(): boolean {
-    return this.isHibernationEnabled;
+    return this.isHibernationEnabled && !this.isMediaPlaying;
   }
 
   @computed get isHibernating(): boolean {
@@ -268,11 +336,7 @@ export default class Service {
     if (this.recipe.hasCustomUrl && this.customUrl) {
       let url: string = '';
       try {
-        url = normalizeUrl(this.customUrl, {
-          stripAuthentication: false,
-          stripWWW: false,
-          removeTrailingSlash: false,
-        });
+        url = normalizedUrl(this.customUrl);
       } catch {
         console.error(
           `Service (${this.recipe.name}): '${this.customUrl}' is not a valid Url.`,
@@ -295,6 +359,10 @@ export default class Service {
   }
 
   @computed get icon(): string {
+    if (this.useFavicon) {
+      return getFaviconUrl(this.url);
+    }
+
     if (this.iconUrl) {
       if (needsToken()) {
         let url: URL;
@@ -312,6 +380,10 @@ export default class Service {
         }
       }
       return this.iconUrl;
+    }
+
+    if (this.recipe.defaultIcon) {
+      return this.recipe.defaultIcon;
     }
 
     return join(this.recipe.path, 'icon.svg');
@@ -420,27 +492,18 @@ export default class Service {
     this.webview.addEventListener('did-start-loading', event => {
       debug('Did start load', this.name, event);
 
-      this.hasCrashed = false;
-      this.isLoading = true;
-      this.isLoadingPage = true;
-      this.isError = false;
+      this._didStartLoading();
     });
 
     this.webview.addEventListener('did-stop-loading', event => {
       debug('Did stop load', this.name, event);
 
-      this.isLoading = false;
-      this.isLoadingPage = false;
+      this._didStopLoading();
     });
 
     // eslint-disable-next-line unicorn/consistent-function-scoping
     const didLoad = () => {
-      this.isLoading = false;
-      this.isLoadingPage = false;
-
-      if (!this.isError) {
-        this.isFirstLoad = false;
-      }
+      this._didLoad();
     };
 
     this.webview.addEventListener('did-frame-finish-load', didLoad.bind(this));
@@ -453,16 +516,13 @@ export default class Service {
         event.errorCode !== -21 &&
         event.errorCode !== -3
       ) {
-        this.isError = true;
-        this.errorMessage = event.errorDescription;
-        this.isLoading = false;
-        this.isLoadingPage = false;
+        this._didFailLoad(event);
       }
     });
 
     this.webview.addEventListener('crashed', () => {
       debug('Service crashed', this.name);
-      this.hasCrashed = true;
+      this._hasCrashed();
     });
 
     this.webview.addEventListener('found-in-page', ({ result }) => {
@@ -470,27 +530,142 @@ export default class Service {
       this.webview.send('found-in-page', result);
     });
 
-    webviewWebContents.on('login', (event, _, authInfo, callback) => {
-      // const authCallback = callback;
-      debug('browser login event', authInfo);
-      event.preventDefault();
-
-      if (authInfo.isProxy && authInfo.scheme === 'basic') {
-        debug('Sending service echo ping');
-        webviewWebContents.send('get-service-id');
-
-        debug('Received service id', this.id);
-
-        const ps = stores.settings.proxy[this.id];
-
-        if (ps) {
-          debug('Sending proxy auth callback for service', this.id);
-          callback(ps.user, ps.password);
-        } else {
-          debug('No proxy auth config found for', this.id);
-        }
-      }
+    this.webview.addEventListener('media-started-playing', event => {
+      debug('Started Playing media', this.name, event);
+      this._didMediaPlaying();
     });
+
+    this.webview.addEventListener('media-paused', event => {
+      debug('Stopped Playing media', this.name, event);
+      this._didMediaPaused();
+    });
+
+    if (webviewWebContents) {
+      // This is needed to prevent events of the same partition from being registered multiple times (when using custom sandboxes)
+      const webviewPartition = webviewWebContents.session.getStoragePath();
+      if (webviewPartition) {
+        // Check if the partition is already active
+        if (activePartitions.has(webviewPartition)) {
+          return;
+        }
+
+        // Add the partition to the active partitions
+        activePartitions.add(webviewPartition);
+      }
+      // -----
+
+      // TODO: Modify this logic once https://github.com/electron/electron/issues/40674 is fixed
+      // This is a workaround for the issue where the zoom in shortcut is not working
+      if (!isMac) {
+        webviewWebContents.on('before-input-event', (event, input) => {
+          if (input.control && input.key === '+' && input.type === 'keyDown') {
+            event.preventDefault();
+            const currentZoom = this.webview?.getZoomLevel();
+            this.webview?.setZoomLevel(currentZoom + 0.5);
+          }
+        });
+      }
+
+      webviewWebContents.session.on('will-download', (event, item) => {
+        event.preventDefault();
+
+        const downloadId = uuidV4();
+
+        window['ferdium'].actions.app.addDownload({
+          id: downloadId,
+          serviceId: this.id,
+          filename: item.getFilename(),
+          url: item.getURL(),
+          savePath: item.getSavePath(),
+        });
+
+        item.addListener('updated', (event, state) => {
+          if (state === 'interrupted') {
+            debug('Download is interrupted but can be resumed');
+          } else if (state === 'progressing') {
+            if (item.isPaused()) {
+              debug('Download is paused');
+            } else {
+              debug(`Received bytes: ${item.getReceivedBytes()}`);
+            }
+          }
+          window['ferdium'].actions.app.updateDownload({
+            id: downloadId,
+            serviceId: this.id,
+            filename: basename(item.getSavePath()),
+            url: item.getURL(),
+            savePath: item.getSavePath(),
+            receivedBytes: item.getReceivedBytes(),
+            totalBytes: item.getTotalBytes(),
+            state,
+          });
+          debug('download updated', event, state);
+        });
+        item.addListener('done', (event, state) => {
+          debug('download done', event, state);
+          if (state === 'completed') {
+            debug('Download successfully');
+          } else {
+            if (state === 'cancelled' && item.getSavePath() === '') {
+              window['ferdium'].actions.app.removeDownload(downloadId);
+              debug('Download is cancelled');
+            }
+            debug(`Download failed: ${state}`);
+          }
+
+          window['ferdium'].actions.app.endedDownload({
+            id: downloadId,
+            serviceId: this.id,
+            receivedBytes: item.getReceivedBytes(),
+            totalBytes: item.getTotalBytes(),
+            state,
+          });
+        });
+
+        ipcRenderer.on('toggle-pause-download', (_, data) => {
+          debug('toggle-pause-download', item.isPaused(), item.getState());
+          if (data.downloadId === downloadId || data.downloadId === undefined) {
+            if (item.isPaused()) {
+              item.resume();
+            } else {
+              item.pause();
+            }
+          }
+          debug('toggle-pause-download', item.isPaused(), item.getState());
+          window['ferdium'].actions.app.updateDownload({
+            id: downloadId,
+            paused: item.isPaused(),
+          });
+        });
+
+        ipcRenderer.on('stop-download', (_, data) => {
+          if (data === undefined || downloadId === data.downloadId) {
+            item.cancel();
+          }
+        });
+      });
+      webviewWebContents.on('login', (event, _, authInfo, callback) => {
+        // const authCallback = callback;
+        debug('browser login event', authInfo);
+        event.preventDefault();
+
+        if (authInfo.isProxy && authInfo.scheme === 'basic') {
+          debug('Sending service echo ping');
+          webviewWebContents.send('get-service-id');
+
+          debug('Received service id', this.id);
+
+          const ps = stores.settings.proxy[this.id];
+
+          if (ps) {
+            debug('Sending proxy auth callback for service', this.id);
+            callback(ps.user, ps.password);
+          } else {
+            debug('No proxy auth config found for', this.id);
+          }
+        }
+      });
+    }
   }
 
   initializeWebViewListener(): void {
@@ -507,5 +682,9 @@ export default class Service {
   resetMessageCount(): void {
     this.unreadDirectMessageCount = 0;
     this.unreadIndirectMessageCount = 0;
+  }
+
+  toggleToTalk(): void {
+    this.webview?.send('toggle-to-talk');
   }
 }

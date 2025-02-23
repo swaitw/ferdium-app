@@ -1,4 +1,4 @@
-import { BinaryLike } from 'crypto';
+import type { BinaryLike } from 'node:crypto';
 import { hash } from '../helpers/password-helpers';
 
 export default class UserApi {
@@ -38,6 +38,10 @@ export default class UserApi {
     return this.server.userInfo();
   }
 
+  requestNewToken() {
+    return this.server.requestNewToken();
+  }
+
   updateInfo(data: { oldPassword: string; newPassword: string }) {
     const userData = data;
     if (userData.oldPassword && userData.newPassword) {
@@ -46,10 +50,6 @@ export default class UserApi {
     }
 
     return this.server.updateUserInfo(userData);
-  }
-
-  getLegacyServices() {
-    return this.server.getLegacyServices();
   }
 
   delete() {

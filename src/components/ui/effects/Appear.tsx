@@ -1,16 +1,27 @@
-import { ReactChildren, useEffect, useState } from 'react';
-import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
+import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
-type Props = {
-  children: ReactChildren;
-  transitionName: string;
-  className: string;
-};
+interface IProps {
+  children: ReactNode;
+  transitionName?: string;
+  className?: string;
+  transitionAppear?: boolean;
+  transitionLeave?: boolean;
+  transitionAppearTimeout?: number;
+  transitionEnterTimeout?: number;
+  transitionLeaveTimeout?: number;
+}
+
 const Appear = ({
   children,
   transitionName = 'fadeIn',
   className = '',
-}: Props) => {
+  transitionAppear = true,
+  transitionLeave = true,
+  transitionAppearTimeout = 1500,
+  transitionEnterTimeout = 1500,
+  transitionLeaveTimeout = 1500,
+}: IProps): ReactElement | null => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -22,17 +33,20 @@ const Appear = ({
   }
 
   return (
-    <ReactCSSTransitionGroup
-      transitionName={transitionName}
-      transitionAppear
-      transitionLeave
-      transitionAppearTimeout={1500}
-      transitionEnterTimeout={1500}
-      transitionLeaveTimeout={1500}
-      className={className}
-    >
-      {children}
-    </ReactCSSTransitionGroup>
+    <TransitionGroup component={null}>
+      <CSSTransition
+        classNames={transitionName || className}
+        appear={transitionAppear}
+        exit={transitionLeave}
+        timeout={{
+          enter: transitionEnterTimeout,
+          appear: transitionAppearTimeout,
+          exit: transitionLeaveTimeout,
+        }}
+      >
+        {children}
+      </CSSTransition>
+    </TransitionGroup>
   );
 };
 

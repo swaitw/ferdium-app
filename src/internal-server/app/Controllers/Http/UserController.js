@@ -4,10 +4,8 @@ const Service = use('App/Models/Service');
 const Workspace = use('App/Models/Workspace');
 const { validateAll } = use('Validator');
 
-const btoa = require('btoa');
-const fetch = require('node-fetch');
+const crypto = require('node:crypto');
 const { v4: uuid } = require('uuid');
-const crypto = require('crypto');
 const { DEFAULT_APP_SETTINGS } = require('../../../../config');
 const { convertToJSON } = require('../../../../jsUtils');
 const { API_VERSION } = require('../../../../environment-remote');
@@ -25,7 +23,9 @@ const apiRequest = (url, route, method, auth) =>
       })
         .then(data => data.json())
         .then(json => resolve(json));
-    } catch {
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.log(error);
       reject();
     }
   });
@@ -150,7 +150,9 @@ class UserController {
     // Try to get an authentication token
     let token;
     try {
-      const basicToken = btoa(`${email}:${hashedPassword}`);
+      const basicToken = Buffer.from(`${email}:${hashedPassword}`).toString(
+        'base64',
+      );
 
       const rawResponse = await fetch(`${server}/${API_VERSION}/auth/login`, {
         method: 'POST',
@@ -196,7 +198,7 @@ class UserController {
       const services = await apiRequest(server, 'me/services', 'GET', token);
 
       for (const service of services) {
-        await this._createAndCacheService(service, serviceIdTranslation); // eslint-disable-line no-await-in-loop
+        await this._createAndCacheService(service, serviceIdTranslation);
       }
     } catch (error) {
       const errorMessage = `Could not import your services into our system.\nError: ${error}`;
@@ -208,7 +210,7 @@ class UserController {
       const workspaces = await apiRequest(server, 'workspace', 'GET', token);
 
       for (const workspace of workspaces) {
-        await this._createWorkspace(workspace, serviceIdTranslation); // eslint-disable-line no-await-in-loop
+        await this._createWorkspace(workspace, serviceIdTranslation);
       }
     } catch (error) {
       const errorMessage = `Could not import your workspaces into our system.\nError: ${error}`;
@@ -221,11 +223,7 @@ class UserController {
   }
 
   // Account import/export
-  async export({
-    // eslint-disable-next-line no-unused-vars
-    auth,
-    response,
-  }) {
+  async export({ response }) {
     const allServices = await Service.all();
     const services = allServices.toJSON();
     const allWorkspaces = await Workspace.all();
@@ -255,7 +253,9 @@ class UserController {
     let file;
     try {
       file = JSON.parse(request.input('file'));
-    } catch {
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.log(error);
       return response.send(
         'Could not import: Invalid file, could not read file',
       );
@@ -270,7 +270,7 @@ class UserController {
     // Import services
     try {
       for (const service of file.services) {
-        await this._createAndCacheService(service, serviceIdTranslation); // eslint-disable-line no-await-in-loop
+        await this._createAndCacheService(service, serviceIdTranslation);
       }
     } catch (error) {
       const errorMessage = `Could not import your services into our system.\nError: ${error}`;
@@ -280,7 +280,7 @@ class UserController {
     // Import workspaces
     try {
       for (const workspace of file.workspaces) {
-        await this._createWorkspace(workspace, serviceIdTranslation); // eslint-disable-line no-await-in-loop
+        await this._createWorkspace(workspace, serviceIdTranslation);
       }
     } catch (error) {
       const errorMessage = `Could not import your workspaces into our system.\nError: ${error}`;
@@ -300,6 +300,7 @@ class UserController {
     );
 
     if (workspace.services) {
+      // eslint-disable-next-line no-param-reassign
       workspace.services = convertToJSON(workspace.services);
     }
     const services =
@@ -309,6 +310,7 @@ class UserController {
           )
         : [];
     if (workspace.data) {
+      // eslint-disable-next-line no-param-reassign
       workspace.data = convertToJSON(workspace.data);
     }
 
@@ -332,9 +334,11 @@ class UserController {
     );
 
     // store the old serviceId as the key for future lookup
+    // eslint-disable-next-line no-param-reassign
     serviceIdTranslation[service.serviceId] = newServiceId;
 
     if (service.settings) {
+      // eslint-disable-next-line no-param-reassign
       service.settings = convertToJSON(service.settings);
     }
 

@@ -15,10 +15,10 @@
 |     Make sure to pass a relative path from the project root.
 */
 
+import { join } from 'node:path';
 import fold from '@adonisjs/fold';
 import { Ignitor, hooks } from '@adonisjs/ignitor';
-import { readFile, stat, chmod, writeFile } from 'fs-extra';
-import { join } from 'path';
+import { chmod, readFile, stat, writeFile } from 'fs-extra';
 import { LOCAL_HOSTNAME } from '../config';
 import { isWindows } from '../environment';
 
@@ -63,12 +63,15 @@ export const server = async (userPath: string, port: number, token: string) => {
         returned = true;
       }
     });
-    new Ignitor(fold).appRoot(__dirname).fireHttpServer().catch((error) => {
-      console.error(error);
-      if (!returned) {
-        returned = true;
-        reject(error);
-      }
-    });
+    new Ignitor(fold)
+      .appRoot(__dirname)
+      .fireHttpServer()
+      .catch(error => {
+        console.error(error);
+        if (!returned) {
+          returned = true;
+          reject(error);
+        }
+      });
   });
 };

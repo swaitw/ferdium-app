@@ -8,6 +8,7 @@ const Database = use('Database');
 const User = use('App/Models/User');
 
 const migrateLog = text => {
+  // eslint-disable-next-line no-console
   console.log('\u001B[36m%s\u001B[0m', 'Ferdium Migration:', '\u001B[0m', text);
 };
 
@@ -21,13 +22,13 @@ module.exports = async () => {
 
   const user = await User.find(1);
   let settings;
-  if (!user) {
+  if (user) {
+    settings = convertToJSON(user.settings);
+  } else {
     migrateLog("🎩  Migrating from old Ferdium version as user doesn't exist");
 
     // Create new user
     await Database.raw('INSERT INTO  "users" ("id") VALUES (\'1\');');
-  } else {
-    settings = convertToJSON(user.settings);
   }
 
   if (
@@ -35,8 +36,7 @@ module.exports = async () => {
     !settings.db_version ||
     settings.db_version !== ferdiumVersion
   ) {
-    const srcVersion =
-      settings && settings.db_version ? settings.db_version : '5.4.0-beta.2';
+    const srcVersion = settings?.db_version || '5.4.0-beta.2';
     migrateLog(`🔮  Migrating table from ${srcVersion} to ${ferdiumVersion}`);
 
     // Migrate database to current Ferdium version

@@ -1,6 +1,6 @@
-import semver from 'semver';
+import { join } from 'node:path';
 import { pathExistsSync } from 'fs-extra';
-import { join } from 'path';
+import semver from 'semver';
 import { DEFAULT_SERVICE_SETTINGS } from '../config';
 import { ifUndefined } from '../jsUtils';
 
@@ -21,12 +21,12 @@ interface RecipeData {
     urlInputPrefix?: string;
     urlInputSuffix?: string;
     disablewebsecurity?: boolean;
-    autoHibernate?: boolean;
     partition?: string;
     local?: boolean;
     message?: string;
     allowFavoritesDelineationInUnreadCount?: boolean;
   };
+  defaultIcon: string;
 }
 
 export interface IRecipe {
@@ -47,16 +47,26 @@ export interface IRecipe {
   message: string;
   allowFavoritesDelineationInUnreadCount: boolean;
   disablewebsecurity: boolean;
-  autoHibernate: boolean;
   path: string;
   partition: string;
   local: boolean;
+  defaultIcon: string;
 
-  readonly overrideUserAgent?: null | Function;
-  readonly buildUrl?: null | Function;
-  readonly modifyRequestHeaders?: null | Function;
-  readonly knownCertificateHosts?: null | Function;
-  readonly events?: null | { (key: string): string };
+  readonly overrideUserAgent?: () => string;
+
+  readonly buildUrl?: (url: string) => string;
+
+  readonly modifyRequestHeaders?: () => void;
+
+  readonly knownCertificateHosts?: () => void;
+
+  readonly events?: null | ((key: string) => string);
+
+  // TODO: [TS DEBT] Need to check if below properties are needed and where is inherited / implemented from
+  author?: string[];
+  hasDarkMode?: boolean;
+  validateUrl?: (url: string) => boolean;
+  icons?: any;
 }
 
 export default class Recipe implements IRecipe {
@@ -67,6 +77,8 @@ export default class Recipe implements IRecipe {
   description = '';
 
   version = '';
+
+  defaultIcon = '';
 
   // Removing this specific type will cause a typescript error
   // even while it's the exact same as the interface
@@ -97,15 +109,15 @@ export default class Recipe implements IRecipe {
 
   disablewebsecurity = DEFAULT_SERVICE_SETTINGS.disablewebsecurity;
 
-  // TODO: Is this even used?
-  autoHibernate = DEFAULT_SERVICE_SETTINGS.autoHibernate;
-
   path = '';
 
   partition = '';
 
   // TODO: Is this being used?
   local = false;
+
+  // TODO: [TS DEBT] introduced to address missing function but need to check how validateUrl is inherited / implemented in recipe
+  validateUrl?: (url: string) => boolean;
 
   // TODO: Need to reconcile which of these are optional/mandatory
   constructor(data: RecipeData) {
@@ -127,8 +139,9 @@ export default class Recipe implements IRecipe {
     // from the recipe
     this.id = ifUndefined<string>(data.id, this.id);
     this.name = ifUndefined<string>(data.name, this.name);
+    this.defaultIcon = ifUndefined<string>(data.defaultIcon, this.defaultIcon);
     this.version = ifUndefined<string>(data.version, this.version);
-    this.aliases = ifUndefined<Array<string>>(data.aliases, this.aliases);
+    this.aliases = ifUndefined<string[]>(data.aliases, this.aliases);
     this.serviceURL = ifUndefined<string>(
       data.config.serviceURL,
       this.serviceURL,
@@ -168,10 +181,6 @@ export default class Recipe implements IRecipe {
     this.disablewebsecurity = ifUndefined<boolean>(
       data.config.disablewebsecurity,
       this.disablewebsecurity,
-    );
-    this.autoHibernate = ifUndefined<boolean>(
-      data.config.autoHibernate,
-      this.autoHibernate,
     );
     this.local = ifUndefined<boolean>(data.config.local, this.local);
     this.message = ifUndefined<string>(data.config.message, this.message);

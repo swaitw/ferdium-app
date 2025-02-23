@@ -1,6 +1,7 @@
-import { ipcRenderer } from 'electron';
 import { BrowserWindow } from '@electron/remote';
-import { pathExistsSync, readFileSync, existsSync } from 'fs-extra';
+import { ipcRenderer } from 'electron';
+import { existsSync, pathExistsSync, readFileSync } from 'fs-extra';
+import { safeParseInt } from '../../jsUtils';
 
 const debug = require('../../preload-safe-debug')(
   'Ferdium:Plugin:RecipeWebview',
@@ -39,7 +40,9 @@ class RecipeWebview {
 
   loopFunc = () => null;
 
-  darkModeHandler = false;
+  toggleToTalkFunc = () => null;
+
+  darkModeHandler: ((darkMode: boolean, config: any) => void) | null = null;
 
   // TODO Remove this once we implement a proper wrapper.
   get ipcRenderer() {
@@ -91,7 +94,7 @@ class RecipeWebview {
    * @param  {string | number | undefined | null} text to be parsed
    */
   safeParseInt(text) {
-    return this.badgeHandler.safeParseInt(text);
+    return safeParseInt(text);
   }
 
   /**
@@ -100,13 +103,13 @@ class RecipeWebview {
    * @param  {string | number | undefined | null} text to be parsed
    */
   isImage(link): boolean {
-    if (typeof link === 'undefined') {
+    if (link === undefined) {
       return false;
     }
 
     const { role } = link.dataset;
 
-    if (typeof role !== 'undefined') {
+    if (role !== undefined) {
       const roles = ['img'];
       return roles.includes(role);
     }
@@ -125,7 +128,6 @@ class RecipeWebview {
    *                          be an absolute path to the file
    */
   injectCSS(...files) {
-    // eslint-disable-next-line unicorn/no-array-for-each
     files.forEach(file => {
       if (pathExistsSync(file)) {
         const styles = document.createElement('style');
@@ -197,6 +199,10 @@ class RecipeWebview {
 
   openNewWindow(url) {
     ipcRenderer.sendToHost('new-window', url);
+  }
+
+  toggleToTalk(fn) {
+    this.toggleToTalkFunc = fn;
   }
 }
 

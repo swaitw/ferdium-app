@@ -1,17 +1,15 @@
 import classnames from 'classnames';
-import { Component, createElement, ReactNode } from 'react';
-import injectStyle, { WithStylesProps } from 'react-jss';
+import {
+  Component,
+  type MouseEventHandler,
+  type ReactElement,
+  type ReactNode,
+  createElement,
+} from 'react';
+import injectStyle, { type WithStylesProps } from 'react-jss';
 
-import { Theme } from '../../../themes';
-import { Omit } from '../typings/generic';
-
-interface IProps extends WithStylesProps<typeof styles> {
-  level?: number;
-  className?: string;
-  children: string | ReactNode;
-  id?: string;
-  onClick?: () => void;
-}
+import type { Theme } from '../../../themes';
+import type { Omit } from '../typings/generic';
 
 const styles = (theme: Theme) => ({
   headline: {
@@ -39,8 +37,16 @@ const styles = (theme: Theme) => ({
   },
 });
 
+interface IProps extends WithStylesProps<typeof styles> {
+  children: ReactNode;
+  level?: number;
+  className?: string;
+  id?: string;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+}
+
 class HeadlineComponent extends Component<IProps> {
-  render() {
+  render(): ReactElement {
     const { classes, level, className, children, id, onClick } = this.props;
 
     return createElement(
@@ -61,13 +67,11 @@ class HeadlineComponent extends Component<IProps> {
 }
 
 const Headline = injectStyle(styles, { injectTheme: true })(HeadlineComponent);
-
-const createH = (level: number) => (props: Omit<IProps, 'classes'>) =>
-  (
-    <Headline level={level} {...props}>
-      {props.children}
-    </Headline>
-  );
+const createH = (level: number) => (props: Omit<IProps, 'classes'>) => (
+  <Headline level={level} {...props}>
+    {props.children}
+  </Headline>
+);
 
 export const H1 = createH(1);
 export const H2 = createH(2);

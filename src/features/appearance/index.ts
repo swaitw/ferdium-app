@@ -2,43 +2,51 @@ import color from 'color';
 import { reaction } from 'mobx';
 import TopBarProgress from 'react-topbar-progress-indicator';
 
-import { isWindows, isLinux } from '../../environment';
+import { pathExistsSync, readFileSync } from 'fs-extra';
 import {
   DEFAULT_APP_SETTINGS,
-  iconSizeBias,
-  SIDEBAR_SERVICES_LOCATION_TOPLEFT,
-  SIDEBAR_SERVICES_LOCATION_CENTER,
   SIDEBAR_SERVICES_LOCATION_BOTTOMRIGHT,
+  SIDEBAR_SERVICES_LOCATION_CENTER,
+  SIDEBAR_SERVICES_LOCATION_TOPLEFT,
+  iconSizeBias,
 } from '../../config';
+import { isLinux, isWindows } from '../../environment';
+import { userDataPath } from '../../environment-remote';
 
 const STYLE_ELEMENT_ID = 'custom-appearance-style';
 
-function createStyleElement() {
+const createStyleElement = () => {
   const styles = document.createElement('style');
   styles.id = STYLE_ELEMENT_ID;
 
-  document.querySelector('head')?.appendChild(styles);
-}
+  document.querySelector('head')?.append(styles);
+};
 
-function setAppearance(style) {
+const setAppearance = style => {
   const styleElement = document.querySelector(`#${STYLE_ELEMENT_ID}`);
 
   if (styleElement) {
     styleElement.innerHTML = style;
   }
-}
+};
 
 // See https://github.com/Qix-/color/issues/53#issuecomment-656590710
-function darkenAbsolute(originalColor, absoluteChange) {
+const darkenAbsolute = (originalColor, absoluteChange) => {
   const originalLightness = originalColor.lightness();
   return originalColor.lightness(originalLightness - absoluteChange);
-}
+};
 
-function generateAccentStyle(accentColorStr) {
+const generateUserCustomCSS = () => {
+  const path = userDataPath('config', 'custom.css');
+  return pathExistsSync(path) ? readFileSync(path).toString() : '';
+};
+
+const generateAccentStyle = (accentColorStr, useHorizontalStyle) => {
   let accentColor;
   try {
     accentColor = color(accentColorStr);
   } catch {
+    // eslint-disable-next-line no-param-reassign
     accentColorStr = DEFAULT_APP_SETTINGS.accentColor;
     accentColor = color(accentColorStr);
   }
@@ -89,7 +97,7 @@ function generateAccentStyle(accentColorStr) {
     }
 
     .franz-form .franz-form__radio.is-selected, .tab-item.is-active {
-      border-color: ${accentColorStr};
+      box-shadow: inset ${useHorizontalStyle ? '0 4px' : '4px 0'} 0 0 ${accentColorStr};
     }
 
     a.button:hover, button.button:hover {
@@ -124,59 +132,64 @@ function generateAccentStyle(accentColorStr) {
       background: ${accentColor.lightness(90).hex()};
     }
   `;
-}
+};
 
-function generateServiceRibbonWidthStyle(
+const generateServiceRibbonWidthStyle = (
   widthStr,
   iconSizeStr,
-  vertical,
+  horizontal,
   isLabelEnabled,
   sidebarServicesLocation,
   useGrayscaleServices,
   grayscaleServicesDim,
-) {
+  shouldShowDragArea,
+  isFullScreen,
+) => {
   const width = Number(widthStr);
   const iconSize = Number(iconSizeStr) - iconSizeBias;
-  let fontSize = 11;
-  let tabItemHeightBias = -5;
-  let sidebarSizeBias = 22;
-  const tabItemWidthBias = 3;
+  const tabItemWidthBias = 1;
+  const verticalStyleOffset = 29;
+
+  let fontSize: number;
+  let tabItemHeightBias: number;
+  let sidebarSizeBias: number;
 
   switch (width) {
-    case 35:
+    case 35: {
       fontSize = 9;
       tabItemHeightBias = 25;
       sidebarSizeBias = 48;
       break;
-    case 45:
+    }
+    case 45: {
       fontSize = 10;
       tabItemHeightBias = 21;
       sidebarSizeBias = 44;
       break;
-    case 55:
-      fontSize = 11;
-      tabItemHeightBias = 13;
-      sidebarSizeBias = 37;
-      break;
-    case 80:
+    }
+    case 80: {
       fontSize = 11;
       tabItemHeightBias = 3;
       sidebarSizeBias = 27;
       break;
-    case 90:
+    }
+    case 90: {
       fontSize = 12;
       tabItemHeightBias = 0;
       sidebarSizeBias = 25;
       break;
-    case 100:
+    }
+    case 100: {
       fontSize = 13;
       tabItemHeightBias = 2;
       sidebarSizeBias = 25;
       break;
-    default:
+    }
+    default: {
       fontSize = 11;
       tabItemHeightBias = 13;
       sidebarSizeBias = 37;
+    }
   }
 
   if (!isLabelEnabled) {
@@ -193,25 +206,29 @@ function generateServiceRibbonWidthStyle(
 
   let sidebarServicesAlignment;
   switch (sidebarServicesLocation) {
-    case SIDEBAR_SERVICES_LOCATION_TOPLEFT:
-      sidebarServicesAlignment = vertical ? "left" : "start";
+    case SIDEBAR_SERVICES_LOCATION_TOPLEFT: {
+      sidebarServicesAlignment = horizontal ? 'left' : 'start';
       break;
-    case SIDEBAR_SERVICES_LOCATION_CENTER:
-      sidebarServicesAlignment = vertical ? "center" : "center";
+    }
+    case SIDEBAR_SERVICES_LOCATION_CENTER: {
+      sidebarServicesAlignment = horizontal ? 'center' : 'center';
       break;
-    case SIDEBAR_SERVICES_LOCATION_BOTTOMRIGHT:
-      sidebarServicesAlignment = vertical ? "right" : "end";
+    }
+    case SIDEBAR_SERVICES_LOCATION_BOTTOMRIGHT: {
+      sidebarServicesAlignment = horizontal ? 'right' : 'end';
       break;
-    default:
-      sidebarServicesAlignment = vertical ? "left" : "start";
+    }
+    default: {
+      sidebarServicesAlignment = horizontal ? 'left' : 'start';
       break;
+    }
   }
 
-  const graysacleServices =
-  `filter: grayscale(1);
-  opacity: ${grayscaleServicesDim}%;`
+  const graysacleServices = `filter: grayscale(1);
+  opacity: ${grayscaleServicesDim}%;`;
 
-  return vertical
+  const sizeDragArea = shouldShowDragArea ? verticalStyleOffset : 0;
+  return horizontal
     ? `
     .sidebar {
       height: ${width}px !important;
@@ -231,11 +248,11 @@ function generateServiceRibbonWidthStyle(
       ${useGrayscaleServices ? graysacleServices : null},
     }
     .tab-item .tab-item__label {
-      margin-left: 4px !important;
       font-size: ${fontSize}px !important;
     }
     .tab-item.is-label-enabled {
-      padding-bottom: 0px !important;
+      padding-top: 6px !important;
+      padding-bottom: 2px !important;
     }
     .sidebar__button {
       font-size: ${width / 3}px !important;
@@ -247,7 +264,24 @@ function generateServiceRibbonWidthStyle(
       margin-top: -${width}px !important;
     }
     .darwin .sidebar {
-      height: ${width + sidebarSizeBias}px !important;
+      height: ${
+        isFullScreen ? width : width + verticalStyleOffset - 3 - sizeDragArea
+      }px !important;
+      ${isFullScreen ? `padding-top: ${2}px !important` : null}
+    }
+    .darwin .app .app__content {
+      padding-top: ${
+        isFullScreen
+          ? width
+          : width +
+            sidebarSizeBias +
+            (sizeDragArea === 0 ? 4 : 4 - sizeDragArea)
+      }px !important;
+    }
+    .darwin .workspaces-drawer {
+      margin-top: -${
+        width + verticalStyleOffset - 5 - sizeDragArea
+      }px !important;
     }
     .darwin .sidebar .sidebar__button--workspaces.is-active {
       height: ${width - sidebarSizeBias}px !important;
@@ -266,6 +300,7 @@ function generateServiceRibbonWidthStyle(
     .tab-item {
       width: ${width}px !important;
       height: ${width - tabItemWidthBias}px !important;
+      min-height: ${width - tabItemWidthBias}px !important;
     }
     .tab-item .tab-item__icon {
       width: ${minimumAdjustedIconSize}px !important;
@@ -278,9 +313,9 @@ function generateServiceRibbonWidthStyle(
       width: calc(100% - ${300 + width}px) !important;
     }
   `;
-}
+};
 
-function generateShowDragAreaStyle(accentColor) {
+const generateShowDragAreaStyle = accentColor => {
   return `
     .sidebar {
       padding-top: 0px !important;
@@ -294,9 +329,9 @@ function generateShowDragAreaStyle(accentColor) {
       height: calc(100% - 28px);
     }
   `;
-}
+};
 
-function generateVerticalStyle(widthStr, alwaysShowWorkspaces) {
+const generateVerticalStyle = (widthStr, alwaysShowWorkspaces) => {
   if (!document.querySelector('#vertical-style')) {
     const link = document.createElement('link');
     link.id = 'vertical-style';
@@ -333,9 +368,9 @@ function generateVerticalStyle(widthStr, alwaysShowWorkspaces) {
     width: calc(100% - 300px) !important;
   }
   `;
-}
+};
 
-function generateOpenWorkspaceStyle() {
+const generateOpenWorkspaceStyle = () => {
   return `
   .app .app__content {
     width: 100%;
@@ -345,9 +380,9 @@ function generateOpenWorkspaceStyle() {
     display: none;
   }
   `;
-}
+};
 
-function generateStyle(settings) {
+const generateStyle = (settings, app) => {
   let style = '';
 
   const {
@@ -358,31 +393,37 @@ function generateStyle(settings) {
     grayscaleServicesDim,
     iconSize,
     showDragArea,
-    useVerticalStyle,
+    useHorizontalStyle,
     alwaysShowWorkspaces,
     showServiceName,
   } = settings;
 
+  const { isFullScreen } = app;
+
+  const shouldShowDragArea = showDragArea && !isFullScreen;
+
   if (
     accentColor.toLowerCase() !== DEFAULT_APP_SETTINGS.accentColor.toLowerCase()
   ) {
-    style += generateAccentStyle(accentColor);
+    style += generateAccentStyle(accentColor, useHorizontalStyle);
   }
 
   style += generateServiceRibbonWidthStyle(
     serviceRibbonWidth,
     iconSize,
-    useVerticalStyle,
+    useHorizontalStyle,
     showServiceName,
     sidebarServicesLocation,
     useGrayscaleServices,
     grayscaleServicesDim,
+    shouldShowDragArea,
+    isFullScreen,
   );
 
-  if (showDragArea) {
+  if (shouldShowDragArea) {
     style += generateShowDragAreaStyle(accentColor);
   }
-  if (useVerticalStyle) {
+  if (useHorizontalStyle) {
     style += generateVerticalStyle(serviceRibbonWidth, alwaysShowWorkspaces);
   } else if (document.querySelector('#vertical-style')) {
     const link = document.querySelector('#vertical-style');
@@ -394,27 +435,29 @@ function generateStyle(settings) {
     style += generateOpenWorkspaceStyle();
   }
 
-  return style;
-}
+  style += generateUserCustomCSS();
 
-function updateProgressbar(settings) {
+  return style;
+};
+
+const updateProgressbar = settings => {
   TopBarProgress.config({
     barThickness: 4,
     barColors: {
       '0': settings.progressbarAccentColor,
     },
-    shadowBlur: 5
+    shadowBlur: 5,
   });
-}
+};
 
-function updateStyle(settings) {
-  const style = generateStyle(settings);
+const updateStyle = (settings, app) => {
+  const style = generateStyle(settings, app);
   setAppearance(style);
   updateProgressbar(settings);
-}
+};
 
 export default function initAppearance(stores) {
-  const { settings } = stores;
+  const { settings, app } = stores;
   createStyleElement();
   updateProgressbar(settings);
 
@@ -429,12 +472,13 @@ export default function initAppearance(stores) {
       settings.all.app.sidebarServicesLocation,
       settings.all.app.useGrayscaleServices,
       settings.all.app.grayscaleServicesDim,
-      settings.all.app.useVerticalStyle,
+      settings.all.app.useHorizontalStyle,
       settings.all.app.alwaysShowWorkspaces,
       settings.all.app.showServiceName,
+      app.isFullScreen,
     ],
     () => {
-      updateStyle(settings.all.app);
+      updateStyle(settings.all.app, app);
     },
     { fireImmediately: true },
   );

@@ -1,12 +1,15 @@
-import { Component, ReactElement } from 'react';
 import { inject, observer } from 'mobx-react';
-
-import { StoresProps } from '../../@types/ferdium-components.types';
+import { Component, type ReactElement } from 'react';
+import type { StoresProps } from '../../@types/ferdium-components.types';
 import Welcome from '../../components/auth/Welcome';
 
-class WelcomeScreen extends Component<StoresProps> {
+interface IProps extends Partial<StoresProps> {}
+
+@inject('stores', 'actions')
+@observer
+class WelcomeScreen extends Component<IProps> {
   render(): ReactElement {
-    const { user, recipePreviews } = this.props.stores;
+    const { user, recipePreviews } = this.props.stores!;
 
     return (
       <Welcome
@@ -19,4 +22,4 @@ class WelcomeScreen extends Component<StoresProps> {
   }
 }
 
-export default inject('stores', 'actions')(observer(WelcomeScreen));
+export default WelcomeScreen;

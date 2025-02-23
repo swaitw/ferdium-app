@@ -2,7 +2,10 @@ const Service = use('App/Models/Service');
 const { validateAll } = use('Validator');
 
 const { v4: uuid } = require('uuid');
-const { DEFAULT_SERVICE_ORDER, DEFAULT_SERVICE_SETTINGS } = require('../../../../config');
+const {
+  DEFAULT_SERVICE_ORDER,
+  DEFAULT_SERVICE_SETTINGS,
+} = require('../../../../config');
 const { convertToJSON } = require('../../../../jsUtils');
 const { deduceIconUrl, moveIcon } = require('../../ImageHelper');
 
@@ -30,7 +33,8 @@ class ServiceController {
       serviceId = uuid();
     } while (
       // eslint-disable-next-line no-await-in-loop, unicorn/no-await-expression-member
-      (await Service.query().where('serviceId', serviceId).fetch()).rows.length > 0
+      (await Service.query().where('serviceId', serviceId).fetch()).rows
+        .length > 0
     );
 
     await Service.create({
@@ -49,6 +53,7 @@ class ServiceController {
         isNotificationEnabled: DEFAULT_SERVICE_SETTINGS.isNotificationEnabled,
         isBadgeEnabled: DEFAULT_SERVICE_SETTINGS.isBadgeEnabled,
         trapLinkClicks: DEFAULT_SERVICE_SETTINGS.trapLinkClicks,
+        useFavicon: DEFAULT_SERVICE_SETTINGS.useFavicon,
         isMuted: DEFAULT_SERVICE_SETTINGS.isMuted,
         isDarkModeEnabled: '', // TODO: This should ideally be a boolean (false). But, changing it caused the sidebar toggle to not work.
         isProgressbarEnabled: DEFAULT_SERVICE_SETTINGS.isProgressbarEnabled,
@@ -76,9 +81,10 @@ class ServiceController {
       // TODO: Remove duplication
       return {
         customRecipe: false,
-        hasCustomIcon: false,
+        hasCustomIcon: DEFAULT_SERVICE_SETTINGS.hasCustomIcon,
         isBadgeEnabled: DEFAULT_SERVICE_SETTINGS.isBadgeEnabled,
         trapLinkClicks: DEFAULT_SERVICE_SETTINGS.trapLinkClicks,
+        useFavicon: DEFAULT_SERVICE_SETTINGS.useFavicon,
         isDarkModeEnabled: '', // TODO: This should ideally be a boolean (false). But, changing it caused the sidebar toggle to not work.
         isProgressbarEnabled: DEFAULT_SERVICE_SETTINGS.isProgressbarEnabled,
         isEnabled: DEFAULT_SERVICE_SETTINGS.isEnabled,
@@ -122,10 +128,9 @@ class ServiceController {
       const newSettings = {
         ...settings,
         iconId,
-        customIconVersion:
-          settings && settings.customIconVersion
-            ? settings.customIconVersion + 1
-            : 1,
+        customIconVersion: settings?.customIconVersion
+          ? settings.customIconVersion + 1
+          : 1,
       };
 
       // Update data in database
@@ -229,6 +234,7 @@ class ServiceController {
         hasCustomIcon: DEFAULT_SERVICE_SETTINGS.customIcon,
         isBadgeEnabled: DEFAULT_SERVICE_SETTINGS.isBadgeEnabled,
         trapLinkClicks: DEFAULT_SERVICE_SETTINGS.trapLinkClicks,
+        useFavicon: DEFAULT_SERVICE_SETTINGS.useFavicon,
         isDarkModeEnabled: '', // TODO: This should ideally be a boolean (false). But, changing it caused the sidebar toggle to not work.
         isProgressbarEnabled: DEFAULT_SERVICE_SETTINGS.isProgressbarEnabled,
         isEnabled: DEFAULT_SERVICE_SETTINGS.isEnabled,

@@ -1,3 +1,97 @@
+# [v6.2.0](https://github.com/ferdium/ferdium-app/compare/v6.1.0...v6.2.0) (2022-09-22)
+
+### :warning: BREAKING CHANGES :warning:
+
+- Added feature to set how Ferdium handles WebRTC IP Exposure (under `Settings` > `Privacy`)
+  - Services that depend on RTC can be affected by this change (eg. Discord). Please see @SpecialAro comment on the issue [#611](https://github.com/ferdium/ferdium-app/issues/611) to see a way to fix it.
+
+### Features
+
+- Added Latvian in the list of supported languages.
+- New Crowdin translation updates (Portuguese, French, German, Polish, Portuguese Brazilian, Japanese, Hebrew, Latvian)
+
+
+### Services
+- Added Magic Level recipe 
+- Added Mailfence recipe
+- Added Odysee recipe
+- Added OnMail recipe
+- Updated Proton Mail icon
+- Fixed Ferdium theme warning hijacking popups on WhatsApp
+
+
+### Bug fixes
+
+
+### Under the hood
+
+- Upgrade `electron` to `20.2.0`
+- Upgrade `electron-builder` to `23.5.1`
+- Upgrade `nodejs` to `16.17.0`
+- Upgrade `electron` to `20.1.2`
+
+# [v6.1.0](https://github.com/ferdium/ferdium-app/compare/v6.0.1-nightly.23...v6.1.0) (2022-08-27)
+
+### Features
+
+- Added native Ferdium Translator.
+- Added language support for Vietnamese, Arabic, Finnish, Hebrew, Korean, Norwegian, Romanian, Sinhala and Swedish. Note that the percentage of each translation can be found in: https://crowdin.com/project/ferdium-app
+- New translation updates (Crowdin)
+
+### Services
+- Added Grammarly recipe
+- Added warning to whatsapp theming
+- Added Tick recipe 
+
+### Bug fixes
+
+- Fix purple screen when trying to run a second instance of Ferdium
+- Fix for Windows not detecting Ferdium window after maximized with the tray icon
+- Fix for app dark mode handler replacing the dark mode recipe setting
+- Fix Toggle Full Screen not working on Menu bar
+
+### Under the hood
+
+- Add mailto to email in md files
+- Upgrade `electron` to `20.1.0`
+- docs: Update README badges
+- ci/cd: Make winget workflow ready for production
+- Update Ferdi/Ferdium names in Migration guide
+- Upgrade `npm` to `8.14.0`
+- Upgrade `nodejs` to `16.16.0`
+- Replace deprecated `react-addons-css-transition-group` with `react-transition-group`
+- chore: change values with mobx actions
+- Upgrade `electron-builder` to `23.3.3`
+- Fix bad conversion to action of reaction `_setLocale()`
+- Fix pnpm run create directions on recipes
+
+# [v6.0.0](https://github.com/ferdium/ferdium-app/compare/v6.0.0-nightly.97...v6.0.0) (2022-07-21)
+
+### Features
+
+- Handle both ferdi and ferdium servers for transferring from
+- Refactor the 'Welcome' screen and the 'SetupAssistant' for better UX
+- Create winget updater GH workflow (#484)
+- Feature: Add Release Notes
+- Add 'Services' tab to settings
+
+### Services
+
+### Bug fixes
+
+- Fix icons misalignment in horizontal mode
+- horizontal sidebar style on macOS
+- enable/disable todos menu
+- remove autoHibernate
+- draggable area on fullscreen (macOS)
+
+### Under the hood
+
+- Added more badges into 'README.md`
+- Fix prepare-code script
+- use global crowdin link and lint fixes
+- Use defaults defined in one place instead of hardcoding in multiple places
+
 # [v6.0.0-beta.3](https://github.com/ferdium/ferdium-app/compare/v6.0.0-nightly.77...v6.0.0-nightly.97) (2022-07-12)
 
 ### Features
@@ -98,7 +192,7 @@
 - Fix default accent color to Ferdium gradient
 - Fix reload after resume and add idle time setting
 - Don't replace custom icon when service updates
-- Workaroud for in-app Password Recovery
+- Workaround for in-app Password Recovery
 - Fix navigation toolbar buttons not being clickable
 - Fix drag-n-drop not working if the service name is shown
 - Fix ribbon menu style on windows
@@ -131,7 +225,7 @@
 - Resurrect the electron-process-manager for Ferdium
 - Hide sidebar buttons toggled behind a hamburger menu
 - Add monochromatic Service icons option with Dim adjustment
-- Add new service-level option where the user can choose whether to open links in Ferdium or in the default browser. Currently implimented only for discord, skype, steamchat and zoom.
+- Add new service-level option where the user can choose whether to open links in Ferdium or in the default browser. Currently implemented only for discord, skype, steamchat and zoom.
 
 ### Services
 

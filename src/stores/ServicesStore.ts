@@ -1,27 +1,28 @@
-import { shell } from 'electron';
-import { action, reaction, computed, observable, makeObservable } from 'mobx';
-import { debounce, remove } from 'lodash';
-import ms from 'ms';
+import { join } from 'node:path';
+import { clipboard, ipcRenderer, shell } from 'electron';
 import { ensureFileSync, pathExistsSync, writeFileSync } from 'fs-extra';
-import { join } from 'path';
+import { debounce, remove } from 'lodash';
+import { action, computed, makeObservable, observable, reaction } from 'mobx';
+import ms from 'ms';
 
-import { Stores } from '../@types/stores.types';
-import { ApiInterface } from '../api';
-import { Actions } from '../actions/lib/actions';
-import Request from './lib/Request';
-import CachedRequest from './lib/CachedRequest';
+import type { Stores } from '../@types/stores.types';
+import type { Actions } from '../actions/lib/actions';
+import type { ApiInterface } from '../api';
+import { DEFAULT_SERVICE_SETTINGS, KEEP_WS_LOADED_USID } from '../config';
+import { ferdiumVersion } from '../environment-remote';
+import { workspaceStore } from '../features/workspaces';
+import {
+  getDevRecipeDirectory,
+  getRecipeDirectory,
+} from '../helpers/recipe-helpers';
 import matchRoute from '../helpers/routing-helpers';
 import { isInTimeframe } from '../helpers/schedule-helpers';
-import {
-  getRecipeDirectory,
-  getDevRecipeDirectory,
-} from '../helpers/recipe-helpers';
-import Service from '../models/Service';
-import { workspaceStore } from '../features/workspaces';
-import { DEFAULT_SERVICE_SETTINGS, KEEP_WS_LOADED_USID } from '../config';
-import { cleanseJSObject } from '../jsUtils';
 import { SPELLCHECKER_LOCALES } from '../i18n/languages';
-import { ferdiumVersion } from '../environment-remote';
+import { cleanseJSObject } from '../jsUtils';
+import type { UnreadServices } from '../lib/dbus/Ferdium';
+import type Service from '../models/Service';
+import CachedRequest from './lib/CachedRequest';
+import Request from './lib/Request';
 import TypedStore from './lib/TypedStore';
 
 const debug = require('../preload-safe-debug')('Ferdium:ServiceStore');
@@ -63,6 +64,8 @@ export default class ServicesStore extends TypedStore {
   // [0] => Most recent, [n] => Least recent
   // No service ID should be in the list multiple times, not all service IDs have to be in the list
   @observable lastUsedServices: string[] = [];
+
+  private toggleToTalkCallback = () => this.active?.toggleToTalk();
 
   constructor(stores: Stores, api: ApiInterface, actions: Actions) {
     super(stores, api, actions);
@@ -158,6 +161,13 @@ export default class ServicesStore extends TypedStore {
     );
 
     reaction(
+      () => this.stores.settings.app.enableTranslator,
+      () => {
+        this._shareSettingsWithServiceProcess();
+      },
+    );
+
+    reaction(
       () => this.stores.settings.app.spellcheckerLanguage,
       () => {
         this._shareSettingsWithServiceProcess();
@@ -207,6 +217,20 @@ export default class ServicesStore extends TypedStore {
     );
 
     reaction(
+      () => this.stores.settings.app.translatorEngine,
+      () => {
+        this._shareSettingsWithServiceProcess();
+      },
+    );
+
+    reaction(
+      () => this.stores.settings.app.translatorLanguage,
+      () => {
+        this._shareSettingsWithServiceProcess();
+      },
+    );
+
+    reaction(
       () => this.stores.settings.app.clipboardNotifications,
       () => {
         this._shareSettingsWithServiceProcess();
@@ -217,12 +241,16 @@ export default class ServicesStore extends TypedStore {
   initialize() {
     super.initialize();
 
+    ipcRenderer.on('toggle-to-talk', this.toggleToTalkCallback);
+
     // Check services to become hibernated
     this.serviceMaintenanceTick();
   }
 
   teardown() {
     super.teardown();
+
+    ipcRenderer.off('toggle-to-talk', this.toggleToTalkCallback);
 
     // Stop checking services for hibernation
     this.serviceMaintenanceTick.cancel();
@@ -272,19 +300,20 @@ export default class ServicesStore extends TypedStore {
         service.lastPoll - service.lastPollAnswer > ms('1m')
       ) {
         // If service did not reply for more than 1m try to reload.
-        if (!service.isActive) {
-          if (this.stores.app.isOnline && service.lostRecipeReloadAttempt < 3) {
-            debug(
-              `Reloading service: ${service.name} (${service.id}). Attempt: ${service.lostRecipeReloadAttempt}`,
-            );
-            // service.webview.reload();
-            service.lostRecipeReloadAttempt += 1;
-
-            service.lostRecipeConnection = false;
-          }
-        } else {
+        if (service.isActive) {
           debug(`Service lost connection: ${service.name} (${service.id}).`);
           service.lostRecipeConnection = true;
+        } else if (
+          this.stores.app.isOnline &&
+          service.lostRecipeReloadAttempt < 3
+        ) {
+          debug(
+            `Reloading service: ${service.name} (${service.id}). Attempt: ${service.lostRecipeReloadAttempt}`,
+          );
+          // service.webview.reload();
+          service.lostRecipeReloadAttempt += 1;
+
+          service.lostRecipeConnection = false;
         }
       } else {
         service.lostRecipeConnection = false;
@@ -303,6 +332,7 @@ export default class ServicesStore extends TypedStore {
             .slice()
             .sort((a, b) => a.order - b.order)
             .map((s, index) => {
+              // eslint-disable-next-line no-param-reassign
               s.index = index;
               return s;
             }),
@@ -316,7 +346,7 @@ export default class ServicesStore extends TypedStore {
     return this.all.filter(service => service.isEnabled);
   }
 
-  @computed get allDisplayed() {
+  @computed get allDisplayed(): Service[] {
     const services = this.stores.settings.all.app.showDisabledServices
       ? this.all
       : this.enabled;
@@ -402,17 +432,17 @@ export default class ServicesStore extends TypedStore {
     return (
       this.allDisplayed.find(
         service => service.isTodosService && service.isEnabled,
-      ) || false
+      ) ?? false
     );
   }
 
   @computed get isTodosServiceActive() {
-    return this.active && this.active.isTodosService;
+    return this.active?.isTodosService;
   }
 
   // TODO: This can actually return undefined as well
   one(id: string): Service {
-    return this.all.find(service => service.id === id) as Service;
+    return this.all.find(service => service.id === id)!;
   }
 
   async _showAddServiceInterface({ recipeId }) {
@@ -433,13 +463,16 @@ export default class ServicesStore extends TypedStore {
     }
 
     // set default values for serviceData
+    // eslint-disable-next-line no-param-reassign
     serviceData = {
       isEnabled: DEFAULT_SERVICE_SETTINGS.isEnabled,
       isHibernationEnabled: DEFAULT_SERVICE_SETTINGS.isHibernationEnabled,
       isWakeUpEnabled: DEFAULT_SERVICE_SETTINGS.isWakeUpEnabled,
       isNotificationEnabled: DEFAULT_SERVICE_SETTINGS.isNotificationEnabled,
       isBadgeEnabled: DEFAULT_SERVICE_SETTINGS.isBadgeEnabled,
+      isMediaBadgeEnabled: DEFAULT_SERVICE_SETTINGS.isMediaBadgeEnabled,
       trapLinkClicks: DEFAULT_SERVICE_SETTINGS.trapLinkClicks,
+      useFavicon: DEFAULT_SERVICE_SETTINGS.useFavicon,
       isMuted: DEFAULT_SERVICE_SETTINGS.isMuted,
       customIcon: DEFAULT_SERVICE_SETTINGS.customIcon,
       isDarkModeEnabled: DEFAULT_SERVICE_SETTINGS.isDarkModeEnabled,
@@ -455,7 +488,7 @@ export default class ServicesStore extends TypedStore {
       : this._cleanUpTeamIdAndCustomUrl(recipeId, serviceData);
 
     const response = await this.createServiceRequest.execute(recipeId, data)
-      ._promise;
+      .promise;
 
     this.allServicesRequest.patch(result => {
       if (!result) return;
@@ -489,11 +522,11 @@ export default class ServicesStore extends TypedStore {
     }
 
     if (data.team) {
-      if (!data.customURL) {
-        serviceData.team = data.team;
-      } else {
+      if (data.customURL) {
         // TODO: Is this correct?
         serviceData.customUrl = data.team;
+      } else {
+        serviceData.team = data.team;
       }
     }
 
@@ -514,7 +547,7 @@ export default class ServicesStore extends TypedStore {
 
     const newData = serviceData;
     if (serviceData.iconFile) {
-      await request._promise;
+      await request.promise;
 
       newData.iconUrl = request.result.data.iconUrl;
       newData.hasCustomUploadedIcon = true;
@@ -540,7 +573,7 @@ export default class ServicesStore extends TypedStore {
       );
     });
 
-    await request._promise;
+    await request.promise;
     this.actionStatus = request.result.status;
 
     if (service.isEnabled) {
@@ -570,11 +603,11 @@ export default class ServicesStore extends TypedStore {
       this.stores.router.push(redirect);
     }
 
-    this.allServicesRequest.patch(result => {
+    this.allServicesRequest.patch((result: Service[]) => {
       remove(result, (c: Service) => c.id === serviceId);
     });
 
-    await request._promise;
+    await request.promise;
     this.actionStatus = request.result.status;
   }
 
@@ -582,7 +615,7 @@ export default class ServicesStore extends TypedStore {
     // Get directory for recipe
     const normalDirectory = getRecipeDirectory(recipe);
     const devDirectory = getDevRecipeDirectory(recipe);
-    let directory;
+    let directory: string;
 
     if (pathExistsSync(normalDirectory)) {
       directory = normalDirectory;
@@ -615,7 +648,12 @@ export default class ServicesStore extends TypedStore {
   @action async _clearCache({ serviceId }) {
     this.clearCacheRequest.reset();
     const request = this.clearCacheRequest.execute(serviceId);
-    await request._promise;
+    await request.promise;
+  }
+
+  @action _setIsActive(service: Service, state: boolean): void {
+    // eslint-disable-next-line no-param-reassign
+    service.isActive = state;
   }
 
   @action _setActive({ serviceId, keepActiveRoute = null }) {
@@ -625,10 +663,10 @@ export default class ServicesStore extends TypedStore {
     for (const s of this.all) {
       if (s.isActive) {
         s.lastUsed = Date.now();
-        s.isActive = false;
+        this._setIsActive(s, false);
       }
     }
-    service.isActive = true;
+    this._setIsActive(service, true);
     this._awake({ serviceId: service.id });
 
     if (
@@ -650,7 +688,7 @@ export default class ServicesStore extends TypedStore {
   @action _blurActive() {
     const service = this.active;
     if (service) {
-      service.isActive = false;
+      this._setIsActive(service, false);
     } else {
       debug('No service is active');
     }
@@ -708,7 +746,9 @@ export default class ServicesStore extends TypedStore {
   }
 
   @action _detachService({ service }) {
+    // eslint-disable-next-line no-param-reassign
     service.webview = null;
+    // eslint-disable-next-line no-param-reassign
     service.isAttached = false;
   }
 
@@ -799,8 +839,64 @@ export default class ServicesStore extends TypedStore {
 
         break;
       }
+
+      case 'load-available-displays': {
+        debug('Received request for capture devices from', serviceId);
+        ipcRenderer.send('load-available-displays', {
+          serviceId,
+          ...args[0],
+        });
+        break;
+      }
+
       case 'notification': {
-        const { options } = args[0];
+        const { notificationId, options } = args[0];
+
+        const { isTwoFactorAutoCatcherEnabled, twoFactorAutoCatcherMatcher } =
+          this.stores.settings.all.app;
+
+        debug(
+          'Settings for catch tokens',
+          isTwoFactorAutoCatcherEnabled,
+          twoFactorAutoCatcherMatcher,
+        );
+
+        if (isTwoFactorAutoCatcherEnabled) {
+          /*
+        parse the token digits from sms body, find "token" or "code" in options.body which reflect the sms content
+        ---
+        Token: 03624 / SMS-Code = PIN Token
+        ---
+        Prüfcode 010313 für Microsoft-Authentifizierung verwenden.
+        ---
+        483133 is your GitHub authentication code. @github.com #483133
+        ---
+        eBay: Ihr Sicherheitscode lautet 080090. \nEr läuft in 15 Minuten ab. Geben Sie den Code nicht an andere weiter.
+        ---
+        PayPal: Ihr Sicherheitscode lautet: 989605. Geben Sie diesen Code nicht weiter.
+      */
+
+          const rawBody = options.body;
+          const { 0: token } = /\d{5,6}/.exec(options.body) || [];
+
+          const wordsToCatch = twoFactorAutoCatcherMatcher
+            .replaceAll(', ', ',')
+            .split(',');
+
+          debug('wordsToCatch', wordsToCatch);
+
+          if (
+            token &&
+            wordsToCatch.some(a =>
+              options.body.toLowerCase().includes(a.toLowerCase()),
+            )
+          ) {
+            // with the extra "+ " it shows its copied to clipboard in the notification
+            options.body = `+ ${rawBody}`;
+            clipboard.writeText(token);
+            debug('Token parsed and copied to clipboard');
+          }
+        }
 
         // Check if we are in scheduled Do-not-Disturb time
         const { scheduledDNDEnabled, scheduledDNDStart, scheduledDNDEnd } =
@@ -813,30 +909,28 @@ export default class ServicesStore extends TypedStore {
           return;
         }
 
-        if (
-          service.recipe.hasNotificationSound ||
-          service.isMuted ||
-          this.stores.settings.all.app.isAppMuted
-        ) {
+        if (service.isMuted || this.stores.settings.all.app.isAppMuted) {
           Object.assign(options, {
             silent: true,
           });
         }
 
         if (service.isNotificationEnabled) {
-          let title = `Notification from ${service.name}`;
-          if (!this.stores.settings.all.app.privateNotifications) {
+          let title: string;
+          if (this.stores.settings.all.app.privateNotifications === true) {
+            // Remove message data from notification in private mode
+            options.body = '';
+            options.icon = service.icon;
+            title = `Notification from ${service.name}`;
+          } else {
+            options.icon = options.icon || service.icon;
             options.body = typeof options.body === 'string' ? options.body : '';
             title =
               typeof args[0].title === 'string' ? args[0].title : service.name;
-          } else {
-            // Remove message data from notification in private mode
-            options.body = '';
-            options.icon = '/assets/img/notification-badge.gif';
           }
 
           this.actions.app.notify({
-            notificationId: args[0].notificationId,
+            notificationId,
             title,
             options,
             serviceId,
@@ -869,9 +963,7 @@ export default class ServicesStore extends TypedStore {
         break;
       }
       case 'set-service-spellchecker-language': {
-        if (!args) {
-          console.warn('Did not receive locale');
-        } else {
+        if (args) {
           this.actions.service.updateService({
             serviceId,
             serviceData: {
@@ -879,6 +971,8 @@ export default class ServicesStore extends TypedStore {
             },
             redirect: false,
           });
+        } else {
+          console.warn('Did not receive locale');
         }
 
         break;
@@ -941,10 +1035,12 @@ export default class ServicesStore extends TypedStore {
     service.lostRecipeConnection = false;
 
     if (service.isTodosService) {
-      return this.actions.todos.reload();
+      this.actions.todos.reload();
+      return;
     }
 
     if (!service.webview) return;
+    // eslint-disable-next-line consistent-return
     return service.webview.loadURL(service.url);
   }
 
@@ -1003,11 +1099,9 @@ export default class ServicesStore extends TypedStore {
     }
 
     this.reorderServicesRequest.execute(services);
-    this.allServicesRequest.patch(data => {
+    this.allServicesRequest.patch((data: Service[]) => {
       for (const s of data) {
-        const service = s;
-
-        service.order = services[s.id];
+        s.order = services[s.id];
       }
     });
   }
@@ -1149,18 +1243,20 @@ export default class ServicesStore extends TypedStore {
     );
 
     // eslint-disable-next-line unicorn/consistent-function-scoping
-    const resetTimer = service => {
+    const resetTimer = (service: Service) => {
+      // eslint-disable-next-line no-param-reassign
       service.lastPollAnswer = Date.now();
+      // eslint-disable-next-line no-param-reassign
       service.lastPoll = Date.now();
     };
 
-    if (!serviceId) {
-      for (const service of this.allDisplayed) resetTimer(service);
-    } else {
+    if (serviceId) {
       const service = this.one(serviceId);
       if (service) {
         resetTimer(service);
       }
+    } else {
+      for (const service of this.allDisplayed) resetTimer(service);
     }
   }
 
@@ -1194,13 +1290,14 @@ export default class ServicesStore extends TypedStore {
   _mapActiveServiceToServiceModelReaction() {
     const { activeService } = this.stores.settings.all.service;
     if (this.allDisplayed.length > 0) {
-      this.allDisplayed.map(service =>
-        Object.assign(service, {
-          isActive: activeService
+      for (const service of this.allDisplayed) {
+        this._setIsActive(
+          service,
+          activeService
             ? activeService === service.id
             : this.allDisplayed[0].id === service.id,
-        }),
-      );
+        );
+      }
     }
   }
 
@@ -1208,26 +1305,29 @@ export default class ServicesStore extends TypedStore {
     const { showMessageBadgeWhenMuted } = this.stores.settings.all.app;
     const { showMessageBadgesEvenWhenMuted } = this.stores.ui;
 
-    const unreadDirectMessageCount = this.allDisplayed
-      .filter(
-        s =>
-          (showMessageBadgeWhenMuted || s.isNotificationEnabled) &&
-          showMessageBadgesEvenWhenMuted &&
-          s.isBadgeEnabled,
-      )
-      .map(s => s.unreadDirectMessageCount)
-      .reduce((a, b) => a + b, 0);
+    const unreadServices: UnreadServices = [];
+    let unreadDirectMessageCount = 0;
+    let unreadIndirectMessageCount = 0;
 
-    const unreadIndirectMessageCount = this.allDisplayed
-      .filter(
-        s =>
-          showMessageBadgeWhenMuted &&
-          showMessageBadgesEvenWhenMuted &&
-          s.isBadgeEnabled &&
-          s.isIndirectMessageBadgeEnabled,
-      )
-      .map(s => s.unreadIndirectMessageCount)
-      .reduce((a, b) => a + b, 0);
+    if (showMessageBadgesEvenWhenMuted) {
+      for (const s of this.allDisplayed) {
+        if (s.isBadgeEnabled) {
+          const direct =
+            showMessageBadgeWhenMuted || s.isNotificationEnabled
+              ? s.unreadDirectMessageCount
+              : 0;
+          const indirect =
+            showMessageBadgeWhenMuted && s.isIndirectMessageBadgeEnabled
+              ? s.unreadIndirectMessageCount
+              : 0;
+          unreadDirectMessageCount += direct;
+          unreadIndirectMessageCount += indirect;
+          if (direct > 0 || indirect > 0) {
+            unreadServices.push([s.name, direct, indirect]);
+          }
+        }
+      }
+    }
 
     // We can't just block this earlier, otherwise the mobx reaction won't be aware of the vars to watch in some cases
     if (showMessageBadgesEvenWhenMuted) {
@@ -1235,6 +1335,12 @@ export default class ServicesStore extends TypedStore {
         unreadDirectMessageCount,
         unreadIndirectMessageCount,
       });
+      ipcRenderer.send(
+        'updateDBusUnread',
+        unreadDirectMessageCount,
+        unreadIndirectMessageCount,
+        unreadServices,
+      );
     }
   }
 
@@ -1273,7 +1379,7 @@ export default class ServicesStore extends TypedStore {
     });
   }
 
-  _cleanUpTeamIdAndCustomUrl(recipeId, data): any {
+  _cleanUpTeamIdAndCustomUrl(recipeId: string, data: Service): any {
     const serviceData = data;
     const recipe = this.stores.recipes.one(recipeId);
 
@@ -1285,9 +1391,11 @@ export default class ServicesStore extends TypedStore {
       data.team &&
       data.customUrl
     ) {
+      // @ts-expect-error The operand of a 'delete' operator must be optional.
       delete serviceData.team;
     }
 
+    // eslint-disable-next-line consistent-return
     return serviceData;
   }
 
@@ -1310,7 +1418,7 @@ export default class ServicesStore extends TypedStore {
   }
 
   // Helper
-  _initializeServiceRecipeInWebview(serviceId) {
+  _initializeServiceRecipeInWebview(serviceId: string) {
     const service = this.one(serviceId);
 
     if (service.webview) {
@@ -1329,7 +1437,7 @@ export default class ServicesStore extends TypedStore {
     }
   }
 
-  _initRecipePolling(serviceId) {
+  _initRecipePolling(serviceId: string) {
     const service = this.one(serviceId);
 
     const delay = ms('2s');
@@ -1352,7 +1460,7 @@ export default class ServicesStore extends TypedStore {
     }
   }
 
-  _wrapIndex(index, delta, size) {
+  _wrapIndex(index: number, delta: number, size: number) {
     return (((index + delta) % size) + size) % size;
   }
 }

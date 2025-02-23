@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { ActionDefinitions } from './lib/actions';
+import type { ActionDefinitions } from './lib/actions';
 
 export default <ActionDefinitions>{
   setBadge: {
@@ -28,4 +28,13 @@ export default <ActionDefinitions>{
   toggleMuteApp: {},
   toggleCollapseMenu: {},
   clearAllCache: {},
+  addDownload: {},
+  removeDownload: {},
+  updateDownload: {},
+  endedDownload: {},
+  stopDownload: {},
+  togglePauseDownload: {},
+  addSandboxService: {},
+  deleteSandboxService: {},
+  editSandboxService: {},
 };

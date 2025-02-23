@@ -1,10 +1,13 @@
 // Note: This file has now become devoid of all references to values deduced from the remote process - all those now live in the `environment-remote.js` file
 
-import { arch, release } from 'os';
+import { arch, release } from 'node:os';
 
 export const isMac = process.platform === 'darwin';
 export const isWindows = process.platform === 'win32';
 export const isLinux = process.platform === 'linux';
+export const isWinPortable = process.env.PORTABLE_EXECUTABLE_FILE != null;
+
+export const isWayland = isLinux && process.env.XDG_SESSION_TYPE === 'wayland';
 
 export const electronVersion: string = process.versions.electron ?? '';
 export const chromeVersion: string = process.versions.chrome ?? '';
@@ -41,3 +44,7 @@ export const splitModeToggleShortcutKey = (isAccelerator = true) =>
   `${cmdOrCtrlShortcutKey(isAccelerator)}+${altKey(isAccelerator)}+S`;
 export const settingsShortcutKey = (isAccelerator = true) =>
   `${cmdOrCtrlShortcutKey(isAccelerator)}+${isMac ? ',' : 'P'}`;
+export const downloadsShortcutKey = (isAccelerator = true) =>
+  `${cmdOrCtrlShortcutKey(isAccelerator)}+J`;
+export const toggleFullScreenKey = () =>
+  isMac ? `CTRL + ${cmdKey} + F` : 'F11';

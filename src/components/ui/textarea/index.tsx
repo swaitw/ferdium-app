@@ -1,9 +1,11 @@
 import classnames from 'classnames';
-import { Component, createRef, TextareaHTMLAttributes } from 'react';
-import injectSheet, { WithStylesProps } from 'react-jss';
+import { Component, type TextareaHTMLAttributes, createRef } from 'react';
+import injectSheet, { type WithStylesProps } from 'react-jss';
 
-import { IFormField } from '../typings/generic';
+import { noop } from 'lodash';
+import type { IFormField } from '../typings/generic';
 
+// biome-ignore lint/suspicious/noShadowRestrictedNames: <explanation>
 import Error from '../error';
 import Label from '../label';
 import Wrapper from '../wrapper';
@@ -24,9 +26,9 @@ interface IProps
 
 class TextareaComponent extends Component<IProps> {
   static defaultProps = {
-    onChange: () => {},
-    onBlur: () => {},
-    onFocus: () => {},
+    onChange: noop,
+    onBlur: noop,
+    onFocus: noop,
     showLabel: true,
     disabled: false,
     rows: 5,
@@ -37,10 +39,10 @@ class TextareaComponent extends Component<IProps> {
   componentDidMount() {
     const { data } = this.props;
 
-    if (this.textareaRef && this.textareaRef.current && data) {
-      Object.keys(data).map(
-        key => (this.textareaRef.current!.dataset[key] = data[key]),
-      );
+    if (this.textareaRef?.current && data) {
+      Object.keys(data).forEach(key => {
+        this.textareaRef.current!.dataset[key] = data[key];
+      });
     }
   }
 
@@ -121,6 +123,4 @@ class TextareaComponent extends Component<IProps> {
   }
 }
 
-export default injectSheet(styles, { injectTheme: true })(
-  TextareaComponent,
-);
+export default injectSheet(styles, { injectTheme: true })(TextareaComponent);

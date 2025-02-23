@@ -1,12 +1,11 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron';
+import type { PathLike } from 'node:fs';
+import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { download } from 'electron-dl';
-import mime from 'mime-types';
 import { writeFileSync } from 'fs-extra';
-import { PathLike } from 'fs';
 
 const debug = require('../../preload-safe-debug')('Ferdium:ipcApi:download');
 
-function decodeBase64Image(dataString: string) {
+const decodeBase64Image = (dataString: string) => {
   const matches = dataString.match(/^data:([+/A-Za-z-]+);base64,(.+)$/);
 
   if (matches?.length !== 3) {
@@ -14,7 +13,7 @@ function decodeBase64Image(dataString: string) {
   }
 
   return Buffer.from(matches[2], 'base64');
-}
+};
 
 export default (params: { mainWindow: BrowserWindow }) => {
   ipcMain.on(
@@ -23,18 +22,10 @@ export default (params: { mainWindow: BrowserWindow }) => {
       const win = BrowserWindow.getFocusedWindow();
 
       try {
-        if (!content) {
-          const dl = await download(win!, url, {
-            saveAs: true,
-          });
-          debug('File saved to', dl.savePath);
-        } else {
-          const extension = mime.extension(fileOptions.mime);
-          const filename = `${fileOptions.name}.${extension}`;
-
+        if (content) {
           try {
             const saveDialog = await dialog.showSaveDialog(params.mainWindow, {
-              defaultPath: filename,
+              defaultPath: fileOptions.name,
             });
 
             if (saveDialog.canceled) return;
@@ -50,10 +41,25 @@ export default (params: { mainWindow: BrowserWindow }) => {
           } catch (error) {
             console.error(error);
           }
+        } else {
+          const dl = await download(win!, url, {
+            saveAs: true,
+          });
+          debug('File saved to', dl.savePath);
         }
       } catch (error) {
         console.error(error);
       }
     },
   );
+
+  ipcMain.handle('download-folder-select', async () => {
+    const result = await dialog.showOpenDialog(params.mainWindow, {
+      properties: ['openDirectory'],
+    });
+
+    if (result.canceled) return null;
+
+    return result.filePaths[0];
+  });
 };

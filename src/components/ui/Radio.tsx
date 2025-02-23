@@ -1,16 +1,18 @@
-import { Component } from 'react';
-import { observer } from 'mobx-react';
-import { Field } from 'mobx-react-form';
 import classnames from 'classnames';
+import { observer } from 'mobx-react';
+import type FieldInterface from 'mobx-react-form/lib/models/FieldInterface';
+import { Component } from 'react';
+// biome-ignore lint/suspicious/noShadowRestrictedNames: <explanation>
+import Error from './error';
 
 type Props = {
-  field: typeof Field;
+  field: FieldInterface;
   className: string;
   focus: boolean;
   showLabel: boolean;
 };
 
-// Should this file be converted into the coding style similar to './toggle/index.tsx'?
+// TODO: Should this file be converted into the coding style similar to './toggle/index.tsx'?
 class Radio extends Component<Props> {
   static defaultProps = {
     focus: false,
@@ -47,7 +49,8 @@ class Radio extends Component<Props> {
           </label>
         )}
         <div className="franz-form__radio-wrapper">
-          {field.options.map(type => (
+          {/* @ts-expect-error Property 'map' does not exist on type 'OptionsModel'. */}
+          {field.options?.map(type => (
             <label
               key={type.value}
               htmlFor={`${field.id}-${type.value}`}
@@ -68,7 +71,8 @@ class Radio extends Component<Props> {
             </label>
           ))}
         </div>
-        {field.error && <div className="franz-form__error">{field.error}</div>}
+
+        {field.error && <Error message={field.error} />}
       </div>
     );
   }

@@ -68,7 +68,7 @@ else
   fi
 
   npm cache clean --force
-  rm -rf ~/.npm ~/.electron-gyp ~/.asdf/installs/nodejs/*/.npm/
+  rm -rf ~/.npm ~/.electron-gyp ~/.asdf/installs/nodejs/*/.npm/ ~/Library/pnpm
 
   git -C recipes clean -fxd # Clean recipes folder/submodule
   git clean -fxd            # Note: This will blast away the 'recipes' folder if you have symlinked it
@@ -83,44 +83,38 @@ fi
 command_exists asdf && asdf reshim nodejs
 
 # Ensure that the system dependencies are at the correct version
-# Check npm version
-EXPECTED_NPM_VERSION=$(node -p 'require("./package.json").engines.npm')
-ACTUAL_NPM_VERSION=$(npm --version)
-if [[ "$ACTUAL_NPM_VERSION" != "$EXPECTED_NPM_VERSION" ]]; then
-  npm i -gf npm@$EXPECTED_NPM_VERSION
-fi
-
 # Check pnpm version
-EXPECTED_PNPM_VERSION=$(node -p 'require("./recipes/package.json").engines.pnpm')
+EXPECTED_PNPM_VERSION=$(node -p 'require("./package.json").engines.pnpm')
 ACTUAL_PNPM_VERSION=$(pnpm --version || true) # in case the pnpm executable itself is not present
 if [[ "$ACTUAL_PNPM_VERSION" != "$EXPECTED_PNPM_VERSION" ]]; then
   npm i -gf pnpm@$EXPECTED_PNPM_VERSION
+fi
+
+# Check pnpm version of the recipes submodule
+EXPECTED_RECIPES_PNPM_VERSION=$(node -p 'require("./recipes/package.json").engines.pnpm')
+if [[ "$EXPECTED_PNPM_VERSION" != "$EXPECTED_RECIPES_PNPM_VERSION" ]]; then
+  fail_with_docs "The expected versions of pnpm are not the same in the main repo and in the recipes submodule, please sync them.
+    expected in recipes  : [$EXPECTED_RECIPES_PNPM_VERSION]
+    expected in main repo: [$EXPECTED_PNPM_VERSION]
+    actual               : [$EXPECTED_PNPM_VERSION]"
 fi
 
 # If 'asdf' is installed, reshim for new nodejs if necessary
 command_exists asdf && asdf reshim nodejs
 
 # -----------------------------------------------------------------------------
-# This is useful if we move from 'npm' to 'pnpm' for the main repo as well
-if [[ -s 'pnpm-lock.yaml' ]]; then
-  BASE_CMD=pnpm
-else
-  BASE_CMD=npm
-fi
-
-# Now the meat.....
-$BASE_CMD i
-$BASE_CMD run prepare-code
-
-# -----------------------------------------------------------------------------
 printf "\n*************** Building recipes ***************\n"
-# Note: 'recipes' is already using only pnpm - can switch to $BASE_CMD AFTER both repos are using pnpm
 pushd recipes
-pnpm i
-pnpm package
+pnpm i && pnpm lint && pnpm reformat-files && pnpm package
 popd
 
 # -----------------------------------------------------------------------------
+# Now the meat.....
+pnpm i
+pnpm prepare-code
+pnpm lint
+pnpm test
+
 printf "\n*************** Building app ***************\n"
 if [[ "$(uname -m)" =~ "arm" ]]; then
   TARGET_ARCH=arm64
@@ -134,7 +128,7 @@ else
   TARGET_OS="linux"
 fi
 
-$BASE_CMD run build -- --$TARGET_ARCH --$TARGET_OS --dir
+pnpm build --$TARGET_ARCH --$TARGET_OS --dir
 
 printf "\n*************** App successfully built! ***************\n"
 

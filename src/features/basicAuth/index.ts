@@ -1,4 +1,4 @@
-import { AuthInfo, BrowserWindow, ipcRenderer } from 'electron';
+import { type AuthInfo, type BrowserWindow, ipcRenderer } from 'electron';
 
 import { state as ModalState } from './store';
 
@@ -21,12 +21,15 @@ export default function initialize() {
   });
 }
 
-export function mainIpcHandler(mainWindow: BrowserWindow, authInfo: AuthInfo) {
+export const mainIpcHandler = (
+  mainWindow: BrowserWindow,
+  authInfo: AuthInfo,
+) => {
   debug('Sending basic auth call', authInfo);
 
   mainWindow.webContents.send('feature:basic-auth-request', {
     authInfo,
   });
-}
+};
 
 export { default as Component } from './Component';

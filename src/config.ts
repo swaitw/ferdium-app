@@ -2,6 +2,8 @@
 
 import ms from 'ms';
 
+import { shiftKey } from './environment';
+
 export const DEFAULT_ACCENT_COLOR = '#7367F0';
 
 export const CHECK_INTERVAL = ms('1h'); // How often should we perform checks
@@ -24,17 +26,33 @@ export const LIVE_WS_API = 'wss://api.franzinfra.com';
 export const LOCAL_API_WEBSITE = 'http://localhost:3333';
 export const DEV_API_FRANZ_WEBSITE = 'https://meetfranz.com';
 export const LIVE_API_FERDIUM_WEBSITE = 'https://ferdium.org';
-
-export const STATS_API = 'https://stats.franzinfra.com';
+export const LIVE_API_FERDIUM_LIBRETRANSLATE =
+  'https://translator.ferdium.org/translate';
 
 export const LOCAL_TODOS_FRONTEND_URL = 'http://localhost:4000';
 export const PRODUCTION_TODOS_FRONTEND_URL = 'https://app.franztodos.com';
-export const DEVELOPMENT_TODOS_FRONTEND_URL =
-  'https://development--franz-todos.netlify.com';
 
 export const CDN_URL = 'https://cdn.franzinfra.com';
 
 export const KEEP_WS_LOADED_USID = '0a0aa000-0a0a-49a0-a000-a0a0a0a0a0a0';
+
+const defaultWebRTCIPHandlingPolicy = 'default';
+const publicWebRTCIPHandlingPolicy = 'default_public_interface_only';
+const publicPrivateWebRTCIPHandlingPolicy =
+  'default_public_and_private_interfaces';
+const disableWebRTCIPHandlingPolicy = 'disable_non_proxied_udp';
+
+export const WEBRTC_IP_HANDLING_POLICY = {
+  [defaultWebRTCIPHandlingPolicy]: 'Expose user public and local IPs',
+  [publicWebRTCIPHandlingPolicy]:
+    'Expose user public IP, but not expose user local IP',
+  [publicPrivateWebRTCIPHandlingPolicy]:
+    'Expose user public and local IPs (only use default route used by http)',
+  [disableWebRTCIPHandlingPolicy]: 'Do not expose public or local IPs',
+};
+
+export const SCREENSHARE_CANCELLED_BY_USER =
+  'desktop-capturer-selection__cancel';
 
 // TODO: Need to convert many of these to i18n
 export const HIBERNATION_STRATEGIES = {
@@ -75,13 +93,147 @@ export const NAVIGATION_BAR_BEHAVIOURS = {
   never: 'Never show navigation bar',
 };
 
-export const SEARCH_ENGINE_STARTPAGE = 'startPage';
-export const SEARCH_ENGINE_GOOGLE = 'google';
-export const SEARCH_ENGINE_DDG = 'duckDuckGo';
+const SEARCH_ENGINE_STARTPAGE = 'startPage';
+const SEARCH_ENGINE_GOOGLE = 'google';
+const SEARCH_ENGINE_DDG = 'duckDuckGo';
 export const SEARCH_ENGINE_NAMES = {
   [SEARCH_ENGINE_STARTPAGE]: 'Startpage',
   [SEARCH_ENGINE_GOOGLE]: 'Google',
   [SEARCH_ENGINE_DDG]: 'DuckDuckGo',
+};
+
+export const TRANSLATOR_ENGINE_GOOGLE = 'Google';
+export const TRANSLATOR_ENGINE_LIBRETRANSLATE = 'LibreTranslate';
+export const TRANSLATOR_ENGINE_NAMES = {
+  [TRANSLATOR_ENGINE_LIBRETRANSLATE]:
+    'Ferdium Translator (Powered by LibreTranslate)',
+  [TRANSLATOR_ENGINE_GOOGLE]: 'Google',
+};
+
+export const LIBRETRANSLATE_TRANSLATOR_LANGUAGES = {
+  ar: 'Arabic',
+  zh: 'Chinese',
+  en: 'English',
+  fr: 'French',
+  de: 'German',
+  hi: 'Hindi',
+  id: 'Indonesian',
+  ga: 'Irish',
+  it: 'Italian',
+  ja: 'Japanese',
+  ko: 'Korean',
+  pl: 'Polish',
+  pt: 'Portuguese',
+  ru: 'Russian',
+  es: 'Spanish',
+  tr: 'Turkish',
+  vi: 'Vietnamese',
+};
+
+export const GOOGLE_TRANSLATOR_LANGUAGES = {
+  af: 'Afrikaans',
+  sq: 'Albanian',
+  ar: 'Arabic',
+  hy: 'Armenian',
+  az: 'Azerbaijani',
+  eu: 'Basque',
+  be: 'Belarusian',
+  bn: 'Bengali',
+  bs: 'Bosnian',
+  bg: 'Bulgarian',
+  ca: 'Catalan',
+  ceb: 'Cebuano',
+  ny: 'Chichewa',
+  'zh-cn': 'Chinese Simplified',
+  'zh-tw': 'Chinese Traditional',
+  co: 'Corsican',
+  hr: 'Croatian',
+  cs: 'Czech',
+  da: 'Danish',
+  nl: 'Dutch',
+  en: 'English',
+  eo: 'Esperanto',
+  et: 'Estonian',
+  tl: 'Filipino',
+  fi: 'Finnish',
+  fr: 'French',
+  fy: 'Frisian',
+  gl: 'Galician',
+  ka: 'Georgian',
+  de: 'German',
+  el: 'Greek',
+  gu: 'Gujarati',
+  ht: 'Haitian Creole',
+  ha: 'Hausa',
+  haw: 'Hawaiian',
+  iw: 'Hebrew',
+  hi: 'Hindi',
+  hmn: 'Hmong',
+  hu: 'Hungarian',
+  is: 'Icelandic',
+  ig: 'Igbo',
+  id: 'Indonesian',
+  ga: 'Irish',
+  it: 'Italian',
+  ja: 'Japanese',
+  jw: 'Javanese',
+  kn: 'Kannada',
+  kk: 'Kazakh',
+  km: 'Khmer',
+  ko: 'Korean',
+  ku: 'Kurdish (Kurmanji)',
+  ky: 'Kyrgyz',
+  lo: 'Lao',
+  la: 'Latin',
+  lv: 'Latvian',
+  lt: 'Lithuanian',
+  lb: 'Luxembourgish',
+  mk: 'Macedonian',
+  mg: 'Malagasy',
+  ms: 'Malay',
+  ml: 'Malayalam',
+  mt: 'Maltese',
+  mi: 'Maori',
+  mr: 'Marathi',
+  mn: 'Mongolian',
+  my: 'Myanmar (Burmese)',
+  ne: 'Nepali',
+  no: 'Norwegian',
+  ps: 'Pashto',
+  fa: 'Persian',
+  pl: 'Polish',
+  pt: 'Portuguese',
+  ma: 'Punjabi',
+  ro: 'Romanian',
+  ru: 'Russian',
+  sm: 'Samoan',
+  gd: 'Scots Gaelic',
+  sr: 'Serbian',
+  st: 'Sesotho',
+  sn: 'Shona',
+  sd: 'Sindhi',
+  si: 'Sinhala',
+  sk: 'Slovak',
+  sl: 'Slovenian',
+  so: 'Somali',
+  es: 'Spanish',
+  su: 'Sudanese',
+  sw: 'Swahili',
+  sv: 'Swedish',
+  tg: 'Tajik',
+  ta: 'Tamil',
+  te: 'Telugu',
+  th: 'Thai',
+  tr: 'Turkish',
+  uk: 'Ukrainian',
+  ur: 'Urdu',
+  uz: 'Uzbek',
+  vi: 'Vietnamese',
+  cy: 'Welsh',
+  xh: 'Xhosa',
+  yi: 'Yiddish',
+  yo: 'Yoruba',
+  zu: 'Zulu',
 };
 
 export const SEARCH_ENGINE_URLS = {
@@ -131,11 +283,6 @@ export const TODO_APPS = {
   [CUSTOM_TODO_SERVICE]: 'Other service',
 };
 
-export const DEFAULT_TODO_SERVICE = TODO_TODOIST_URL;
-export const DEFAULT_TODO_RECIPE_ID =
-  TODO_SERVICE_RECIPE_IDS[DEFAULT_TODO_SERVICE];
-export const DEFAULT_TODO_SERVICE_NAME = TODO_APPS[DEFAULT_TODO_SERVICE];
-
 export const SIDEBAR_WIDTH = {
   35: 'Extremely slim sidebar',
   45: 'Very slim sidebar',
@@ -176,23 +323,21 @@ export const DEFAULT_WINDOW_OPTIONS = {
 
 export const GITHUB_FRANZ_URL = 'https://github.com/meetfranz';
 export const GITHUB_FERDIUM_URL = 'https://github.com/ferdium';
-export const FERDIUM_SERVICE_REQUEST = `${GITHUB_FERDIUM_URL}/ferdium-recipes/issues`;
-export const FRANZ_TRANSLATION = 'https://crowdin.com/project/ferdium';
-export const FRANZ_DEV_DOCS = 'http://bit.ly/franz-dev-hub';
+export const FERDIUM_SERVICE_REQUEST = `${GITHUB_FERDIUM_URL}/ferdium-app/issues`;
+export const FERDIUM_TRANSLATION = 'https://crowdin.com/project/ferdium-app';
+export const FERDIUM_DEV_DOCS =
+  'https://github.com/ferdium/ferdium-recipes/blob/main/docs/integration.md';
 
-export const FILE_SYSTEM_SETTINGS_TYPES = ['app', 'proxy'];
+export const FILE_SYSTEM_SETTINGS_TYPES = ['app', 'proxy', 'shortcuts'];
 
 export const LOCAL_SERVER = 'You are using Ferdium without a server';
 export const SERVER_NOT_LOADED = 'Ferdium::SERVER_NOT_LOADED';
 
 export const ALLOWED_PROTOCOLS = ['https:', 'http:', 'ftp:', 'ferdium:'];
 
-export const DEFAULT_SETTING_KEEP_ALL_WORKSPACES_LOADED = false;
-
 export const DEFAULT_TODOS_WIDTH = 300;
 export const TODOS_MIN_WIDTH = 200;
 export const DEFAULT_TODOS_VISIBLE = false;
-export const DEFAULT_IS_FEATURE_ENABLED_BY_USER = true;
 export const DEFAULT_IS_TODO_FEATURE_ENABLED_BY_USER = false;
 export const TODOS_PARTITION_ID = 'persist:todos';
 
@@ -202,6 +347,8 @@ export const DEFAULT_SERVICE_ORDER = 99; // something high enough that it gets a
 
 export const SPLIT_COLUMNS_MIN = 1;
 export const SPLIT_COLUMNS_MAX = 5;
+
+export const DEFAULT_LOADER_COLOR = '#FFFFFF';
 
 export const DEFAULT_APP_SETTINGS = {
   autoLaunchOnStart: false,
@@ -218,10 +365,13 @@ export const DEFAULT_APP_SETTINGS = {
   clipboardNotifications: true,
   notifyTaskBarOnMessage: false,
   showDisabledServices: true,
+  isTwoFactorAutoCatcherEnabled: false,
+  twoFactorAutoCatcherMatcher: 'token, code, sms, verify',
   showServiceName: false,
   showMessageBadgeWhenMuted: true,
   showDragArea: false,
   enableSpellchecking: true,
+  enableTranslator: false,
   spellcheckerLanguage: 'en-us',
   darkMode: false,
   navigationBarManualActive: false,
@@ -235,9 +385,9 @@ export const DEFAULT_APP_SETTINGS = {
 
   // Ferdium specific options
   server: LIVE_FERDIUM_API,
-  predefinedTodoServer: DEFAULT_TODO_SERVICE,
+  predefinedTodoServer: TODO_TODOIST_URL,
   autohideMenuBar: false,
-  lockingFeatureEnabled: false,
+  isLockingFeatureEnabled: false,
   locked: false,
   lockedPassword: '',
   useTouchIdToUnlock: true,
@@ -253,15 +403,20 @@ export const DEFAULT_APP_SETTINGS = {
   automaticUpdates: true,
   universalDarkMode: true,
   userAgentPref: '',
+  downloadFolderPath: '',
   adaptableDarkMode: true,
   accentColor: DEFAULT_ACCENT_COLOR,
   progressbarAccentColor: DEFAULT_ACCENT_COLOR,
   serviceRibbonWidth: 68,
   sidebarServicesLocation: SIDEBAR_SERVICES_LOCATION_TOPLEFT,
   iconSize: iconSizeBias,
+  sentry: true,
   navigationBarBehaviour: 'custom',
+  webRTCIPHandlingPolicy: disableWebRTCIPHandlingPolicy,
   searchEngine: SEARCH_ENGINE_STARTPAGE,
-  useVerticalStyle: false,
+  translatorLanguage: 'en',
+  translatorEngine: TRANSLATOR_ENGINE_LIBRETRANSLATE,
+  useHorizontalStyle: false,
   hideCollapseButton: false,
   isMenuCollapsed: false,
   hideRecipesButton: false,
@@ -271,13 +426,17 @@ export const DEFAULT_APP_SETTINGS = {
   hideWorkspacesButton: false,
   hideNotificationsButton: false,
   hideSettingsButton: false,
+  hideDownloadButton: false,
   alwaysShowWorkspaces: false,
+  hideAllServicesWorkspace: false,
   liftSingleInstanceLock: false,
   enableLongPressServiceHint: false,
-  proxyFeatureEnabled: false,
-  onlyShowFavoritesInUnreadCount: false,
+  isTodosFeatureEnabled: true,
   customTodoServer: '',
   locale: 'en-US',
+  keepAllWorkspacesLoaded: false,
+  useSelfSignedCertificates: false,
+  sandboxServices: true,
 };
 
 export const DEFAULT_SERVICE_SETTINGS = {
@@ -286,7 +445,9 @@ export const DEFAULT_SERVICE_SETTINGS = {
   isWakeUpEnabled: true,
   isNotificationEnabled: true,
   isBadgeEnabled: true,
+  isMediaBadgeEnabled: false,
   trapLinkClicks: false,
+  useFavicon: false,
   isMuted: false,
   customIcon: false,
   isDarkModeEnabled: false,
@@ -300,5 +461,20 @@ export const DEFAULT_SERVICE_SETTINGS = {
   hasHostedOption: false,
   allowFavoritesDelineationInUnreadCount: false,
   disablewebsecurity: false,
-  autoHibernate: false,
+  spellcheckerLanguage: false,
+  onlyShowFavoritesInUnreadCount: false,
+  isProxyFeatureEnabled: false,
+  proxyHost: '',
+  proxyPort: 0,
+  proxyUser: '',
+  proxyPassword: '',
+  darkReaderBrightness: 100,
+  darkReaderContrast: 90,
+  darkReaderSepia: 10,
+};
+
+export const DEFAULT_SHORTCUTS = {
+  activateNextService: 'Ctrl+tab',
+  activatePreviousService: `Ctrl+${shiftKey()}+tab`,
+  activateServiceUsesAlt: false,
 };

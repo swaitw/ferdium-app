@@ -1,10 +1,11 @@
-import Workspace from '../features/workspaces/models/Workspace';
-import Recipe from '../models/Recipe';
-import Service from '../models/Service';
-import User from '../models/User';
-import { Request } from '../stores/lib/Request';
-import { CachedRequest } from '../stores/lib/CachedRequest';
-import Reaction from '../stores/lib/Reaction';
+/* eslint-disable no-use-before-define */
+import type Workspace from '../features/workspaces/models/Workspace';
+import type Recipe from '../models/Recipe';
+import type Service from '../models/Service';
+import type User from '../models/User';
+import type CachedRequest from '../stores/lib/CachedRequest';
+import type Reaction from '../stores/lib/Reaction';
+import type Request from '../stores/lib/Request';
 
 // TODO: This file will be removed in the future when all stores are
 // correctly typed and the use of these interfaces are obsolete.
@@ -59,6 +60,7 @@ interface Actions {
 interface Api {
   app: AppStore;
   features: FeaturesStore;
+  // eslint-disable-next-line @typescript-eslint/ban-types
   local: {};
   recipePreviews: RecipePreviewsStore;
   recipes: RecipeStore;
@@ -78,18 +80,21 @@ interface TypedStore {
   resetStatus: () => void;
 }
 
-interface AppStore extends TypedStore {
+export interface AppStore extends TypedStore {
   accentColor: string;
   adaptableDarkMode: boolean;
   progressbarAccentColor: string;
   authRequestFailed: () => void;
   autoLaunchOnStart: () => void;
   automaticUpdates: boolean;
+  isTwoFactorAutoCatcherEnabled: boolean;
+  twoFactorAutoCatcherMatcher: string;
   clearAppCacheRequest: () => void;
   clipboardNotifications: boolean;
   darkMode: boolean;
-  dictionaries: [];
   enableSpellchecking: boolean;
+  enableTranslator: boolean;
+  useSelfSignedCertificates: boolean;
   fetchDataInterval: 4;
   get(key: string): any;
   getAppCacheSizeRequest: () => void;
@@ -101,11 +106,13 @@ interface AppStore extends TypedStore {
   isOnline: boolean;
   isSystemDarkModeEnabled: () => void;
   isSystemMuteOverridden: () => void;
-  locale: () => void;
+  locale: string;
   lockedPassword: string;
   reloadAfterResume: boolean;
   reloadAfterResumeTime: number;
   searchEngine: string;
+  translatorEngine: string;
+  translatorLanguage: string;
   spellcheckerLanguage: string;
   splitMode: boolean;
   splitColumns: number;
@@ -120,8 +127,11 @@ interface AppStore extends TypedStore {
     FAILED: 'FAILED';
   };
   universalDarkMode: boolean;
+  isDownloading: () => boolean;
   cacheSize: () => void;
   debugInfo: () => void;
+  enableLongPressServiceHint: boolean;
+  getSandbox: (serviceId: string) => string | undefined;
 }
 
 interface CommunityRecipesStore extends TypedStore {
@@ -162,7 +172,7 @@ interface RecipeStore extends TypedStore {
   all: Recipe[];
   one: (id: string) => Recipe;
   recipeIdForServices: () => void;
-  _install({ recipeId: string }): Promise<Recipe>;
+  _install({ recipeId }): Promise<Recipe>;
 }
 
 interface RequestsStore extends TypedStore {
@@ -196,7 +206,7 @@ interface RouterStore {
   replace: () => void;
 }
 
-export interface ServicesStore extends TypedStore {
+interface ServicesStore extends TypedStore {
   clearCacheRequest: () => void;
   createServiceRequest: CachedRequest;
   deleteServiceRequest: () => void;
@@ -222,12 +232,11 @@ interface ISettings {
   [key: string]: any;
 }
 
-export interface SettingsStore extends TypedStore {
+interface SettingsStore extends TypedStore {
   update: (value: any) => void;
   remove: (value: any) => void;
   fileSystemSettingsTypes: any[];
   loaded: boolean;
-  updateAppSettingsRequest: () => void;
   _fileSystemSettingsCache: () => void;
   all: ISettings;
   app: AppStore;
@@ -283,7 +292,7 @@ interface UIStore extends TypedStore {
   theme: () => void;
 }
 
-export interface UserStore extends TypedStore {
+interface UserStore extends TypedStore {
   BASE_ROUTE: '/auth';
   CHANGE_SERVER_ROUTE: '/auth/server';
   IMPORT_ROUTE: '/auth/signup/import';
@@ -297,7 +306,6 @@ export interface UserStore extends TypedStore {
   accountType: () => void;
   authToken: () => void;
   deleteAccountRequest: () => void;
-  fetchUserInfoInterval: null;
   getLegacyServicesRequest: () => void;
   getUserInfoRequest: CachedRequest;
   hasCompletedSignup: () => void;
@@ -320,27 +328,22 @@ export interface UserStore extends TypedStore {
   _retrievePassword: () => void;
   changeServerRoute: () => void;
   data: User;
-  importRoute: string;
-  inviteRoute: string;
   isLoggedIn: boolean;
   isTokenExpired: boolean;
-  legacyServices: () => void;
   loginRoute: string;
-  logoutRoute: string;
   passwordRoute: string;
-  setupRoute: string;
   signupRoute: string;
   team: () => void;
 }
 
-export interface WorkspacesStore extends TypedStore {
+interface WorkspacesStore extends TypedStore {
   activeWorkspace: () => void;
   delete: ({ workspace }) => void;
   update: ({ workspace }) => void;
   create: ({ workspace }) => void;
   edit: ({ workspace }) => void;
   saving: boolean;
-  filterServicesByActiveWorkspace: () => void;
+  filterServicesByActiveWorkspace: (services: Service[]) => Service[];
   isFeatureActive: () => void;
   isAnyWorkspaceActive: boolean;
   isSettingsRouteActive: () => void;

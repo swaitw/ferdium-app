@@ -8,17 +8,24 @@ publish:
   provider: github
 
 snap:
+  base: core22
   plugs: ["default", "camera", "audio-record", "removable-media"]
+  allowNativeWayland: true
+  executableArgs: ["$(sh -c '[ \"$(snapctl get wayland-native)\" != \"false\" ] && echo --ozone-platform-hint=auto || true')"]
+  hooks: ./build-helpers/snap-hooks
   publish:
     provider: snapStore
+  description: 'Ferdium is your cross-platform messaging app / former heir to the throne of Austria-Hungary which brings your chat & messaging services together into one application. For enabling webcam access you need to connect "camera" plug to snap, and for microphone with PulseAudio the "audio-record" plug. This can be done in Snap GUI or via command: `snap connect ferdium:camera; snap connect ferdium:audio-record`.'
 
 nsis:
   perMachine: false
-  oneClick: true
+  oneClick: false
+  allowToChangeInstallationDirectory: true
   artifactName: "${productName}-${os}-AutoSetup-${version}-${arch}.${ext}"
 
 portable:
   artifactName: "${productName}-${os}-Portable-${version}-${arch}.${ext}"
+  unpackDirName: "Ferdium-Unpacked"
 
 dmg:
   background: ./build-helpers/images/dmgInstaller.tiff
@@ -38,6 +45,7 @@ deb:
   artifactName: "${productName}-${os}-${version}-${arch}.${ext}"
 
 rpm:
+  artifactName: "${productName}-${os}-${version}-${arch}.${ext}"
   # Prevent creation of symlinks in /usr/lib/.build_id to avoid conflicts with other electron-based app having the symlink to chrome-sandbox
   fpm: ["--rpm-rpmbuild-define=_build_id_links none"]
 
@@ -52,6 +60,7 @@ asarUnpack:
   - ./recipes
   - ./assets/fonts
   - ./assets/images/taskbar
+  - ./assets/images/icons
 
 mac:
   hardenedRuntime: true
@@ -62,6 +71,7 @@ mac:
   entitlements: "./build-helpers/entitlements.mas.plist"
   entitlementsInherit: "./build-helpers/entitlements.mas.inherit.plist"
   artifactName: "${productName}-${os}-bundle-${version}-${arch}.${ext}"
+  notarize: false
   target:
     - target: dmg
       arch: [x64, arm64]
@@ -70,6 +80,7 @@ mac:
   extendInfo:
     NSCameraUsageDescription: "This app requires camera access for video chats"
     NSMicrophoneUsageDescription: "This app requires microphone access for voice chats"
+    NSFocusStatusUsageDescription: "This app requires focus access for DND functionality"
 
 win:
   artifactName: "${productName}-${os}-Installer-${version}-${arch}.${ext}"
@@ -81,14 +92,16 @@ win:
       arch: [x64, ia32, arm64]
   # The name of the CN appearing in the certificate must be present in the publisherName list below
   publisherName: ["Ferdium Contributors", "Ambroise Grau"]
+  # Remove the verification for a signature to allow auto-update without signed certificate
+  verifyUpdateCodeSignature: false
 
 linux:
   icon: ./build-helpers/images/icons
   category: Network;InstantMessaging;
   executableName: ferdium
-  synopsis: "Messaging app for WhatsApp, Slack, Telegram, Gmail, Hangouts and many many more."
+  synopsis: "Messaging app for WhatsApp, Slack, Telegram, Gmail, Google Chat, and many more."
   # Note: Please keep the description as a single-line string, as this will become the Comment in the ferdium.desktop Linux launcher file, which requires a single line.
-  description: 'Ferdium is your messaging app / former heir to the throne of Austria-Hungary and combines chat & messaging services into one application. Ferdium currently supports Slack, WhatsApp, Gmail, Facebook Messenger, Telegram, Google Hangouts, GroupMe, Skype and many more. You can download Ferdium for free for Mac, Windows, and Linux. For enabling webcam access you need to connect "camera" plug to snap, and for microphone with PulseAudio - "audio-record" plug. This can be done in Snap GUI or via command: `snap connect ferdium:camera; snap connect ferdium:audio-record`.'
+  description: 'Desktop app bringing all your messaging services into one installable'
   artifactName: "${productName}-${os}-${version}.${ext}"
   target:
     - target: AppImage
@@ -96,5 +109,6 @@ linux:
       arch: [x64, arm64, armv7l]
     - target: tar.gz
     - target: rpm
+      arch: [x64, arm64]
     - target: freebsd
     - target: snap

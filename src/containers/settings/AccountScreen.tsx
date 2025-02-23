@@ -1,7 +1,7 @@
-import { Component, ReactElement } from 'react';
 import { inject, observer } from 'mobx-react';
+import { Component, type ReactElement } from 'react';
 
-import { StoresProps } from '../../@types/ferdium-components.types';
+import type { StoresProps } from '../../@types/ferdium-components.types';
 
 import AccountDashboard from '../../components/settings/account/AccountDashboard';
 import ErrorBoundary from '../../components/util/ErrorBoundary';
@@ -9,12 +9,6 @@ import { LIVE_FRANZ_API } from '../../config';
 import { WEBSITE } from '../../environment-remote';
 
 class AccountScreen extends Component<StoresProps> {
-  onCloseWindow(): void {
-    const { user, features } = this.props.stores;
-    user.getUserInfoRequest.invalidate({ immediately: true });
-    features.featuresRequest.invalidate({ immediately: true });
-  }
-
   reloadData(): void {
     const { user } = this.props.stores;
 
@@ -53,7 +47,6 @@ class AccountScreen extends Component<StoresProps> {
             user.getUserInfoRequest.isError
           }
           retryUserInfoRequest={() => this.reloadData()}
-          onCloseSubscriptionWindow={() => this.onCloseWindow()}
           deleteAccount={userActions.delete}
           isLoadingDeleteAccount={user.deleteAccountRequest.isExecuting}
           isDeleteAccountSuccessful={

@@ -1,27 +1,20 @@
 import classnames from 'classnames';
-import { Property } from 'csstype';
-import { Component, InputHTMLAttributes } from 'react';
-import injectStyle, { WithStylesProps } from 'react-jss';
-
-import { Theme } from '../../../themes';
-import { IFormField } from '../typings/generic';
-
+import type { Property } from 'csstype';
+import { noop } from 'lodash';
+import { Component, type InputHTMLAttributes, type ReactElement } from 'react';
+import withStyles, { type WithStylesProps } from 'react-jss';
+import type { Theme } from '../../../themes';
+// biome-ignore lint/suspicious/noShadowRestrictedNames: <explanation>
 import Error from '../error';
 import Label from '../label';
+import type { IFormField } from '../typings/generic';
 import Wrapper from '../wrapper';
 
-interface IProps
-  extends InputHTMLAttributes<HTMLInputElement>,
-    IFormField,
-    WithStylesProps<typeof styles> {
-  className?: string;
-}
-
-let buttonTransition: string = 'none';
-
-if (window && window.matchMedia('(prefers-reduced-motion: no-preference)')) {
-  buttonTransition = 'all .5s';
-}
+const buttonTransition: string = window?.matchMedia(
+  '(prefers-reduced-motion: no-preference)',
+)
+  ? 'all .5s'
+  : 'none';
 
 const styles = (theme: Theme) => ({
   toggle: {
@@ -63,26 +56,26 @@ const styles = (theme: Theme) => ({
   },
 });
 
-class ToggleComponent extends Component<IProps> {
-  public static defaultProps = {
-    onChange: () => {},
-    showLabel: true,
-    disabled: false,
-    error: '',
-  };
+interface IProps
+  extends InputHTMLAttributes<HTMLInputElement>,
+    IFormField,
+    WithStylesProps<typeof styles> {
+  className?: string;
+}
 
-  render() {
+class Toggle extends Component<IProps> {
+  render(): ReactElement {
     const {
       classes,
       className,
-      disabled,
-      error,
-      id,
-      label,
-      showLabel,
-      checked,
-      value,
-      onChange,
+      id = '',
+      name = '',
+      label = '',
+      error = '',
+      checked = false,
+      showLabel = true,
+      disabled = false,
+      onChange = noop,
     } = this.props;
 
     return (
@@ -106,20 +99,20 @@ class ToggleComponent extends Component<IProps> {
               })}
             />
             <input
-              className={classes.input}
-              id={id}
               type="checkbox"
+              id={id}
+              name={name}
               checked={checked}
-              value={value}
+              className={classes.input}
               onChange={onChange}
               disabled={disabled}
             />
           </div>
         </Label>
-        {error && <Error message={error} />}
+        {error ? <Error message={error as string} /> : null}
       </Wrapper>
     );
   }
 }
 
-export default injectStyle(styles, { injectTheme: true })(ToggleComponent);
+export default withStyles(styles, { injectTheme: true })(Toggle);

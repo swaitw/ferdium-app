@@ -1,16 +1,16 @@
-import { observable, computed, action, makeObservable } from 'mobx';
-import moment from 'moment';
-import jwt from 'jsonwebtoken';
-import localStorage from 'mobx-localstorage';
 import { ipcRenderer } from 'electron';
+import jwt from 'jsonwebtoken';
+import { action, computed, makeObservable, observable } from 'mobx';
+import localStorage from 'mobx-localstorage';
+import moment from 'moment';
 
-import { ApiInterface } from '../api';
-import { Actions } from '../actions/lib/actions';
-import { Stores } from '../@types/stores.types';
+import type { Stores } from '../@types/stores.types';
+import type { Actions } from '../actions/lib/actions';
+import type { ApiInterface } from '../api';
 import { TODOS_PARTITION_ID } from '../config';
 import { isDevMode } from '../environment-remote';
-import Request from './lib/Request';
 import CachedRequest from './lib/CachedRequest';
+import Request from './lib/Request';
 import TypedStore from './lib/TypedStore';
 
 const debug = require('../preload-safe-debug')('Ferdium:UserStore');
@@ -50,14 +50,14 @@ export default class UserStore extends TypedStore {
     'getInfo',
   );
 
+  @observable requestNewTokenRequest: CachedRequest = new CachedRequest(
+    this.api.user,
+    'requestNewToken',
+  );
+
   @observable updateUserInfoRequest: Request = new Request(
     this.api.user,
     'updateInfo',
-  );
-
-  @observable getLegacyServicesRequest: CachedRequest = new CachedRequest(
-    this.api.user,
-    'getLegacyServices',
   );
 
   @observable deleteAccountRequest: CachedRequest = new CachedRequest(
@@ -87,8 +87,6 @@ export default class UserStore extends TypedStore {
   };
 
   @observable logoutReason: string | null = null;
-
-  fetchUserInfoInterval = null;
 
   constructor(stores: Stores, api: ApiInterface, actions: Actions) {
     super(stores, api, actions);
@@ -127,24 +125,8 @@ export default class UserStore extends TypedStore {
     return this.LOGIN_ROUTE;
   }
 
-  get logoutRoute(): string {
-    return this.LOGOUT_ROUTE;
-  }
-
   get signupRoute(): string {
     return this.SIGNUP_ROUTE;
-  }
-
-  get setupRoute(): string {
-    return this.SETUP_ROUTE;
-  }
-
-  get inviteRoute(): string {
-    return this.INVITE_ROUTE;
-  }
-
-  get importRoute(): string {
-    return this.IMPORT_ROUTE;
   }
 
   get passwordRoute(): string {
@@ -174,6 +156,11 @@ export default class UserStore extends TypedStore {
   @computed get data() {
     if (!this.isLoggedIn) return {};
 
+    const newTokenNeeded = this._shouldRequestNewToken(this.authToken);
+    if (newTokenNeeded) {
+      this._requestNewToken();
+    }
+
     return this.getUserInfoRequest.execute().result || {};
   }
 
@@ -181,13 +168,9 @@ export default class UserStore extends TypedStore {
     return this.data.team || null;
   }
 
-  @computed get legacyServices(): any {
-    return this.getLegacyServicesRequest.execute() || {};
-  }
-
   // Actions
   @action async _login({ email, password }): Promise<void> {
-    const authToken = await this.loginRequest.execute(email, password)._promise;
+    const authToken = await this.loginRequest.execute(email, password).promise;
     this._setUserData(authToken);
 
     this.stores.router.push('/');
@@ -209,6 +192,8 @@ export default class UserStore extends TypedStore {
     plan,
     currency,
   }): Promise<void> {
+    // TODO: [TS DEBT] Need to find a way proper to implement promise's then and catch in request class
+    // @ts-expect-error Fix me
     const authToken = await this.signupRequest.execute({
       firstname,
       lastname,
@@ -231,14 +216,14 @@ export default class UserStore extends TypedStore {
   @action async _retrievePassword({ email }): Promise<void> {
     const request = this.passwordRequest.execute(email);
 
-    await request._promise;
+    await request.promise;
     this.actionStatus = request.result.status || [];
   }
 
   @action async _invite({ invites }): Promise<void> {
     const data = invites.filter(invite => invite.email !== '');
 
-    const response = await this.inviteRequest.execute(data)._promise;
+    const response = await this.inviteRequest.execute(data).promise;
 
     this.actionStatus = response.status || [];
 
@@ -251,8 +236,7 @@ export default class UserStore extends TypedStore {
   @action async _update({ userData }): Promise<void> {
     if (!this.isLoggedIn) return;
 
-    const response = await this.updateUserInfoRequest.execute(userData)
-      ._promise;
+    const response = await this.updateUserInfoRequest.execute(userData).promise;
 
     this.getUserInfoRequest.patch(() => response.data);
     this.actionStatus = response.status || [];
@@ -299,7 +283,7 @@ export default class UserStore extends TypedStore {
         data: service,
       });
       // eslint-disable-next-line no-await-in-loop
-      await this.stores.services.createServiceRequest._promise;
+      await this.stores.services.createServiceRequest.promise;
     }
 
     this.isImportLegacyServicesExecuting = false;
@@ -349,7 +333,7 @@ export default class UserStore extends TypedStore {
     if (this.isLoggedIn) {
       let data;
       try {
-        data = await this.getUserInfoRequest.execute()._promise;
+        data = await this.getUserInfoRequest.execute().promise;
       } catch {
         return;
       }
@@ -366,6 +350,32 @@ export default class UserStore extends TypedStore {
   }
 
   // Helpers
+  _shouldRequestNewToken(authToken): boolean {
+    try {
+      const decoded = jwt.decode(authToken);
+      if (!decoded) {
+        throw new Error('Invalid token');
+      }
+
+      if (decoded.uid) {
+        return true;
+      }
+
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
+  _requestNewToken(): void {
+    // Logic to request new token (use an endpoint for that)
+    const data = this.requestNewTokenRequest.execute().result;
+    if (data) {
+      this.authToken = data.token;
+      localStorage.setItem('authToken', data.token);
+    }
+  }
+
   _parseToken(authToken) {
     try {
       const decoded = jwt.decode(authToken);
@@ -398,15 +408,15 @@ export default class UserStore extends TypedStore {
     const parsedUrl = new URL(url);
     const params = new URLSearchParams(parsedUrl.search.slice(1));
 
-    // TODO: Remove the neccesity for `as string`
-    params.append('authToken', this.authToken as string);
+    // TODO: Remove the necessity for `as string`
+    params.append('authToken', this.authToken!);
 
     return `${parsedUrl.origin}${parsedUrl.pathname}?${params.toString()}`;
   }
 
   async _migrateUserLocale(): Promise<void> {
     try {
-      await this.getUserInfoRequest._promise;
+      await this.getUserInfoRequest.promise;
     } catch {
       return;
     }

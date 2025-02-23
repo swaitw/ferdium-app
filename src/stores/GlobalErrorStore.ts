@@ -1,7 +1,8 @@
-import { observable, action, makeObservable } from 'mobx';
-import { Actions } from '../actions/lib/actions';
-import { ApiInterface } from '../api';
-import { Stores } from '../@types/stores.types';
+import type { Response } from 'electron';
+import { action, makeObservable, observable } from 'mobx';
+import type { Stores } from '../@types/stores.types';
+import type { Actions } from '../actions/lib/actions';
+import type { ApiInterface } from '../api';
 import Request from './lib/Request';
 import TypedStore from './lib/TypedStore';
 
@@ -11,12 +12,8 @@ interface Message {
     message?: string;
     status?: number;
   };
-  request?: {
-    result: any;
-    wasExecuted: any;
-    method: any;
-  };
-  response?: any;
+  request?: Request;
+  response?: Response;
   server?: any;
   info?: any;
   url?: string;
@@ -28,36 +25,38 @@ export default class GlobalErrorStore extends TypedStore {
 
   @observable messages: Message[] = [];
 
-  @observable response: object = {};
+  @observable response: Response = {} as Response;
 
-  // TODO: Get rid of the @ts-ignores in this function.
+  // TODO: Get rid of the @ts-expect-errors in this function.
   constructor(stores: Stores, api: ApiInterface, actions: Actions) {
     super(stores, api, actions);
 
     makeObservable(this);
 
     window.addEventListener('error', (...errorArgs: any[]): void => {
-      // @ts-ignore ts-message: Expected 5 arguments, but got 2.
+      // @ts-expect-error ts-message: Expected 5 arguments, but got 2.
       this._handleConsoleError.call(this, ['error', ...errorArgs]);
     });
 
     const origConsoleError = console.error;
     window.console.error = (...errorArgs: any[]) => {
-      // @ts-ignore ts-message: Expected 5 arguments, but got 2.
+      // @ts-expect-error ts-message: Expected 5 arguments, but got 2.
       this._handleConsoleError.call(this, ['error', ...errorArgs]);
       origConsoleError.apply(this, errorArgs);
     };
 
+    // eslint-disable-next-line no-console
     const origConsoleLog = console.log;
     window.console.log = (...logArgs: any[]) => {
-      // @ts-ignore ts-message: Expected 5 arguments, but got 2.
+      // @ts-expect-error ts-message: Expected 5 arguments, but got 2.
       this._handleConsoleError.call(this, ['log', ...logArgs]);
       origConsoleLog.apply(this, logArgs);
     };
 
+    // eslint-disable-next-line no-console
     const origConsoleInfo = console.info;
     window.console.info = (...infoArgs: any[]) => {
-      // @ts-ignore ts-message: Expected 5 arguments, but got 2.
+      // @ts-expect-error ts-message: Expected 5 arguments, but got 2.
       this._handleConsoleError.call(this, ['info', ...infoArgs]);
       origConsoleInfo.apply(this, infoArgs);
     };
@@ -85,21 +84,15 @@ export default class GlobalErrorStore extends TypedStore {
     }
   }
 
-  @action _handleRequests = async (request: {
-    isError: any;
-    error: { json: () => object | PromiseLike<object> };
-    result: any;
-    wasExecuted: any;
-    _method: any;
-  }): Promise<void> => {
+  @action _handleRequests = async (request: Request): Promise<void> => {
     if (request.isError) {
       this.error = request.error;
 
-      if (request.error.json) {
+      if (request.error?.json) {
         try {
           this.response = await request.error.json();
         } catch {
-          this.response = {};
+          this.response = {} as Response;
         }
         if (this.error?.status === 401) {
           window['ferdium'].stores.app.authRequestFailed = true;
@@ -111,8 +104,8 @@ export default class GlobalErrorStore extends TypedStore {
         request: {
           result: request.result,
           wasExecuted: request.wasExecuted,
-          method: request._method,
-        },
+          method: request.method,
+        } as Request,
         error: this.error,
         response: this.response,
         server: window['ferdium'].stores.settings.app.server,
